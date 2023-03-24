@@ -1,6 +1,6 @@
-import 'dart:convert' show utf8;
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import 'package:flutter/material.dart';
+import 'package:iboamanager/loginPage.dart';
 import 'adminPage.dart';
 
 void main() {
@@ -15,14 +15,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Iboa Manager',
       theme: ThemeData(
-        fontFamily: 'NotoSans',
+        fontFamily: 'NotoSansKR',
         brightness: Brightness.light,
         visualDensity: VisualDensity.adaptivePlatformDensity,
         primaryColor: Colors.blueGrey,
         primarySwatch: Colors.blueGrey,
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: const MyHomePage(title: 'Iboa Manager'),
+      //home: const MyHomePage(title: 'Iboa Manager'),
+      home : LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -112,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               SideMenuItem(
                 priority: 1,
-                title: 'Manage admin',
+                title: '绢靛刮 包府',
                 onTap: (page, _) {
                   sideMenu.changePage(page);
                 },
@@ -120,7 +121,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               SideMenuItem(
                 priority: 2,
-                title: 'Manage user',
+                title: '蜡历 包府',
                 onTap: (page, _) {
                   sideMenu.changePage(page);
                 },
@@ -140,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               SideMenuItem(
                 priority: 3,
-                title: 'Manage statistics',
+                title: '烹拌 包府',
                 onTap: (page, _) {
                   sideMenu.changePage(page);
                 },

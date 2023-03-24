@@ -59,7 +59,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/images/eyesonicon.jpg
+    - assets/images/eyesonicon.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -78,9 +78,9 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: NotoSans
+    - family: NotoSansKR
       fonts:
-        - asset: assets/fonts/NotoSans-Medium.ttf
+        - asset: assets/fonts/NotoSansKR-Medium.otf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
