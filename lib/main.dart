@@ -1,6 +1,12 @@
+// ignore_for_file: prefer_const_literals_to_create_immutables
+
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:iboamanager/StatisticsPage.dart';
+import 'package:iboamanager/UserPage.dart';
 import 'package:iboamanager/loginPage.dart';
+import 'dart:developer';
 import 'adminPage.dart';
 
 void main() {
@@ -22,8 +28,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blueGrey,
         scaffoldBackgroundColor: Colors.white,
       ),
-      //home: const MyHomePage(title: 'Iboa Manager'),
-      home : LoginPage(),
+      home: const MyHomePage(title: 'Iboa Manager'),
+      //home : const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -33,22 +39,34 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
 
   final String title;
-
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  MyHomePageState createState() => MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class MyHomePageState extends State<MyHomePage> {
   PageController page = PageController();
   SideMenuController sideMenu = SideMenuController();
+
+  static final storage = FlutterSecureStorage();
+  static String token = "";
+
   @override
   void initState() {
     sideMenu.addListener((p0) {
       page.jumpToPage(p0);
     });
+    getToken();
+    //log("token : " + token);
     super.initState();
   }
 
+  void getToken() {
+    storage.read(key: "token")
+    .then((value) {
+      token = value.toString();
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,10 +86,18 @@ class _MyHomePageState extends State<MyHomePage> {
               selectedColor: Colors.lightBlue,
               selectedTitleTextStyle: const TextStyle(color: Colors.white),
               selectedIconColor: Colors.white,
-              // decoration: BoxDecoration(
-              //   borderRadius: BorderRadius.all(Radius.circular(10)),
-              // ),
-              // backgroundColor: Colors.blueGrey[700]
+              decoration: const BoxDecoration(
+                //borderRadius: BorderRadius.all(Radius.circular(10)),
+                border: Border(
+                  right: BorderSide(
+                    color: Colors.black,
+                    width: 1.0,
+                    style: BorderStyle.solid
+                  )
+                )
+              ),
+              //backgroundColor: Colors.blueGrey[700]
+              backgroundColor: Colors.white
             ),
             title: Column(
               children: [
@@ -98,50 +124,50 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             items: [
+              // SideMenuItem(
+              //   priority: 0,
+              //   title: "dashboard",
+              //   onTap: (page, _) {
+              //     sideMenu.changePage(page);
+              //   },
+              //   icon: const Icon(Icons.home),
+              //   badgeContent: const Text(
+              //     '3',
+              //     style: TextStyle(color: Colors.white),
+              //   ),
+              //   tooltipContent: "This is a tooltip for Dashboard item",
+              // ),
               SideMenuItem(
                 priority: 0,
-                title: "dashboard",
-                onTap: (page, _) {
-                  sideMenu.changePage(page);
-                },
-                icon: const Icon(Icons.home),
-                badgeContent: const Text(
-                  '3',
-                  style: TextStyle(color: Colors.white),
-                ),
-                tooltipContent: "This is a tooltip for Dashboard item",
-              ),
-              SideMenuItem(
-                priority: 1,
-                title: '¾îµå¹Î °ü¸®',
+                title: 'ì–´ë“œë¯¼ ê´€ë¦¬',
                 onTap: (page, _) {
                   sideMenu.changePage(page);
                 },
                 icon: const Icon(Icons.supervisor_account),
               ),
               SideMenuItem(
-                priority: 2,
-                title: 'À¯Àú °ü¸®',
+                priority: 1,
+                title: 'ìœ ì € ê´€ë¦¬',
                 onTap: (page, _) {
                   sideMenu.changePage(page);
                 },
                 icon: const Icon(Icons.file_copy_rounded),
-                trailing: Container(
-                    decoration: const BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: BorderRadius.all(Radius.circular(6))),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6.0, vertical: 3),
-                      child: Text(
-                        'New',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[800]),
-                      ),
-                    )),
+                // trailing: Container(
+                //     decoration: const BoxDecoration(
+                //         color: Colors.amber,
+                //         borderRadius: BorderRadius.all(Radius.circular(6))),
+                //     child: Padding(
+                //       padding: const EdgeInsets.symmetric(
+                //           horizontal: 6.0, vertical: 3),
+                //       child: Text(
+                //         'New',
+                //         style: TextStyle(fontSize: 11, color: Colors.grey[800]),
+                //       ),
+                //     )),
               ),
               SideMenuItem(
-                priority: 3,
-                title: 'Åë°è °ü¸®',
+                priority: 2,
+                title: 'í†µê³„ ê´€ë¦¬',
                 onTap: (page, _) {
                   sideMenu.changePage(page);
                 },
@@ -153,34 +179,9 @@ class _MyHomePageState extends State<MyHomePage> {
             child: PageView(
               controller: page,
               children: [
-                Container(
-                  color: Colors.white,
-                  child: const Center(
-                    child: Text(
-                      'Dashboard',
-                      style: TextStyle(fontSize: 35),
-                    ),
-                  ),
-                ),
-                const SecondRoute().build(context),
-                Container(
-                  color: Colors.white,
-                  child: const Center(
-                    child: Text(
-                      'Files',
-                      style: TextStyle(fontSize: 35),
-                    ),
-                  ),
-                ),
-                Container(
-                  color: Colors.white,
-                  child: const Center(
-                    child: Text(
-                      'Download',
-                      style: TextStyle(fontSize: 35),
-                    ),
-                  ),
-                ),
+                const AdminPage(),
+                const UserPage(),
+                const StatisticsPage(),
               ],
             ),
           ),
