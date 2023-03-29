@@ -1,16 +1,21 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_unnecessary_containers, sort_child_properties_last
+// ignore_for_file: library_private_types_in_public_api, avoid_unnecessary_containers, sort_child_properties_last, non_constant_identifier_names
 
+import 'dart:convert';
+import 'dart:developer';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:iboamanager/main.dart';
+
+const url = "http://localhost:8080";
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
 
   @override
-  _AdminPageState createState() => _AdminPageState();
+  AdminPageState createState() => AdminPageState();
 }
 
-class _AdminPageState extends State<AdminPage> with RestorationMixin {
+class AdminPageState extends State<AdminPage> with RestorationMixin {
   String token = "";
 
   final RestorableInt _rowIndex = RestorableInt(0);
@@ -104,35 +109,74 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
               },
               sortColumnIndex: _sortColumnIndex.value,
               sortAscending: _sortAscending.value,
+              columnSpacing: 10.0,
               columns: [
                 DataColumn(
-                  label: const Text("번호"),
+                  label: Container(
+                    child: const Text(
+                      "번호",
+                      textAlign: TextAlign.center,
+                    ),
+                    width: 30,
+                  ),
+                  numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<num>((d) => d.id, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: const Text("이름"),
+                  label: Container(
+                    child: const Text(
+                      "이름",
+                      textAlign: TextAlign.center,
+                    ),
+                    width: 30,
+                  ),
                   numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<String>((d) => d.name, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: const Text("이메일"),
+                  label: Container(
+                    child: const Text("이메일"),
+                    width: 40,
+                  ),
                   numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<String>((d) => d.email, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: const Text("권한"),
+                  label: Container(
+                    child: const Text("권한"),
+                    width: 30,
+                  ),
                   numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<String>((d) => d.role, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: const Text("생성일"),
+                  label: Container(
+                    child: const Text(
+                      "생성일",
+                      textAlign: TextAlign.center,
+                    ),
+                    width: 1000,
+                  ),
                   numeric: true,
                   onSort: (columnIndex, ascending) => _sort<String>(
                       (d) => d.createdAt, columnIndex, ascending),
+                ),
+                DataColumn(
+                  label: Container(
+                    child: const Text(
+                      "수정",
+                      textAlign: TextAlign.center,
+                    ),
+                    width: 30,
+                    alignment: Alignment.center,
+                  ),
+                  numeric: true,
+                  onSort: (columnIndex, ascending) =>
+                      _sort<String>((d) => d.role, columnIndex, ascending),
                 ),
               ],
               source: _accountDataSource!,
@@ -150,25 +194,70 @@ class _Account {
   final int id;
   final String name;
   final String email;
-  final String role;
+  String role;
   final String createdAt;
+
+  _Account Copy() {
+    return _Account(id, name, email, role, createdAt);
+  }
 }
 
 class _AccountDataSource extends DataTableSource {
+  final formKey = GlobalKey<FormState>();
+  final List<DropdownMenuItem<String>> _valueList = [
+    const DropdownMenuItem(
+      child: Text("master"), 
+      value: 'master',
+    ), 
+    const DropdownMenuItem(
+      child: Text("normal"), 
+      value: 'normal',
+    ), 
+  ];
+
   _AccountDataSource(this.context) {
-    _accounts = <_Account>[
-      _Account(1, "이름1", "이메일1", "마스타1", "오늘"),
-      _Account(2, "이름2", "이메일2", "마네쟈2", "내일"),
-      _Account(3, "이름3", "이메일3", "마네쟈3", "모레"),
-      _Account(4, "이름4", "이메일4", "마네쟈4", "글피"),
-      _Account(5, "이름5", "이메일5", "마네쟈5", "다음주"),
-    ];
+    _accounts = []; 
+    getAccounts();
   }
 
   final BuildContext context;
   late List<_Account> _accounts;
-  int _selectedCount = 0;
 
+  void getAccounts() async {
+    try {
+      log("getAdmins");
+      var res = await http.get(
+      Uri.parse(
+        '$url/api/admin/getAdmins'),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': '*/*'
+        },
+      );
+
+      var data = jsonDecode(res.body);
+      var success = data['success'];
+      if (success) {
+        final admins = data['admins'];
+        _accounts.clear();
+        for (int i = 0; i < admins.length; i++) {
+          final admin = admins[i];
+          log(admin.toString());
+          _accounts.add(
+            _Account(admin['id'], admin['name'], admin['email'], admin['role'], admin['createdAt'])
+          );
+        }
+      } else {
+        _accounts = [];
+      }
+
+      notifyListeners();
+    } catch (error) {
+      log(error.toString());
+    }
+  }
+
+  int _selectedCount = 0;
   void _sort<T>(Comparable<T> Function(_Account d) getField, bool ascending) {
     _accounts.sort((a, b) {
       final aValue = getField(a);
@@ -179,6 +268,133 @@ class _AccountDataSource extends DataTableSource {
     });
 
     notifyListeners();
+  }
+
+  deleteAdmin(_Account account) async {
+    try {
+      log("id : ${account.id}, role : ${account.role}");
+      http.Response res = await http.delete(
+        Uri.parse("$url/api/admin/deleteAdmin"),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': '*/*'
+        },
+        body: {
+          'id': "${account.id}"
+        }
+      );
+
+      var data = jsonDecode(res.body);
+      return data['success'];
+
+    } catch(error) {
+      log(error.toString());
+    }
+  }
+
+  modifyAdmin(_Account account) async {
+    try {
+      log("id : ${account.id}, role : ${account.role}");
+      http.Response res = await http.put(
+        Uri.parse("$url/api/admin/modifyAdmin"),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': '*/*'
+        },
+        body: {
+          'id': "${account.id}",
+          'role': account.role
+        }
+      );
+
+      var data = jsonDecode(res.body);
+      return data['success'];
+
+    } catch(error) {
+      log(error.toString());
+    }
+  }
+
+  SnackBar makeSnackBar(String comment) {
+    return SnackBar(
+        content: Text(
+          comment,
+          style: const TextStyle(fontFamily: "NotoSansKR"),
+        ),
+        duration: const Duration(seconds: 3),
+    );
+  }
+
+  modifyDialog(_Account account) {
+    var tempAccount = account.Copy();
+
+    showDialog(
+      context: context, 
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("권한 변경 또는 삭제"),
+          content: Form(
+            key: formKey,
+            child: Container(
+              alignment: Alignment.center, 
+              height: 300,
+              margin: EdgeInsets.all(10.0), 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text("id : ${tempAccount.id}"),
+                  Text("이메일 : ${tempAccount.email}"),
+                  Text("이름 : ${tempAccount.name}"),
+                  DropdownButtonFormField(
+                    items: _valueList,
+                    onChanged: ((value) {
+                      tempAccount.role = value.toString();
+                    }),
+                  )
+                ],
+              ),
+            )
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("취소")
+            ),
+            TextButton(
+              onPressed: () async {
+                var result = await deleteAdmin(tempAccount);
+                if (result) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 성공"));
+                  getAccounts();
+                } else {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 실패"));
+                }
+              },
+              child: const Text("삭제")
+            ),
+            TextButton(
+              onPressed: () async {
+                var result = await modifyAdmin(tempAccount);
+                if (result) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 성공"));
+                  getAccounts();
+                } else {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 실패"));
+                }
+              },
+              child: const Text("수정")
+            ), 
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -194,6 +410,16 @@ class _AccountDataSource extends DataTableSource {
         DataCell(Text(account.email)),
         DataCell(Text(account.role)),
         DataCell(Text(account.createdAt)),
+        DataCell(
+          ElevatedButton(
+            child: const Text("수정"),
+            style: const ButtonStyle(
+              backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+              alignment: Alignment.center
+            ),
+            onPressed: () => modifyDialog(account),
+          ),
+        )
       ],
     );
   }
