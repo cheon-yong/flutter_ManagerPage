@@ -24,7 +24,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
   final RestorableBool _sortAscending = RestorableBool(true);
   final RestorableIntN _sortColumnIndex = RestorableIntN(null);
 
-  _AccountDataSource? _accountDataSource;
+  _AdminDataSource? _adminDataSource;
   @override
   void initState() {
     token = MyHomePageState.token;
@@ -41,19 +41,19 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
     registerForRestoration(_sortAscending, 'sort_ascending');
     registerForRestoration(_sortColumnIndex, 'sort_column_index');
 
-    _accountDataSource ??= _AccountDataSource(context);
+    _adminDataSource ??= _AdminDataSource(context);
     switch (_sortColumnIndex.value) {
       case 0:
-        _accountDataSource!._sort<num>((d) => d.id, _sortAscending.value);
+        _adminDataSource!._sort<num>((d) => d.id, _sortAscending.value);
         break;
       case 1:
-        _accountDataSource!._sort<String>((d) => d.name, _sortAscending.value);
+        _adminDataSource!._sort<String>((d) => d.name, _sortAscending.value);
         break;
       case 2:
-        _accountDataSource!._sort<String>((d) => d.role, _sortAscending.value);
+        _adminDataSource!._sort<String>((d) => d.role, _sortAscending.value);
         break;
       case 3:
-        _accountDataSource!
+        _adminDataSource!
             ._sort<String>((d) => d.createdAt, _sortAscending.value);
         break;
     }
@@ -62,15 +62,15 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _accountDataSource ??= _AccountDataSource(context);
+    _adminDataSource ??= _AdminDataSource(context);
   }
 
   void _sort<T>(
-    Comparable<T> Function(_Account d) getField,
+    Comparable<T> Function(_Admin d) getField,
     int columnIndex,
     bool ascending,
   ) {
-    _accountDataSource!._sort<T>(getField, ascending);
+    _adminDataSource!._sort<T>(getField, ascending);
     setState(() {
       _sortColumnIndex.value = columnIndex;
       _sortAscending.value = ascending;
@@ -82,7 +82,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
     _rowsPerPage.dispose();
     _sortColumnIndex.dispose();
     _sortAscending.dispose();
-    _accountDataSource!.dispose();
+    _adminDataSource!.dispose();
     super.dispose();
   }
 
@@ -105,7 +105,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
                       backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
                       alignment: Alignment.center
                     ),
-                    onPressed: () =>_accountDataSource?.createDialog(),
+                    onPressed: () =>_adminDataSource?.createDialog(),
                   )
                 ],
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -194,7 +194,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
                       _sort<String>((d) => d.role, columnIndex, ascending),
                 ),
               ],
-              source: _accountDataSource!,
+              source: _adminDataSource!,
             ),
           ],
         )
@@ -203,8 +203,8 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
   }
 }
 
-class _Account {
-  _Account(this.id, this.name, this.email, this.role, this.createdAt);
+class _Admin {
+  _Admin(this.id, this.name, this.email, this.role, this.createdAt);
 
   final int id;
   final String name;
@@ -212,12 +212,12 @@ class _Account {
   String role;
   final String createdAt;
 
-  _Account Copy() {
-    return _Account(id, name, email, role, createdAt);
+  _Admin Copy() {
+    return _Admin(id, name, email, role, createdAt);
   }
 }
 
-class _AccountDataSource extends DataTableSource {
+class _AdminDataSource extends DataTableSource {
   final formKey = GlobalKey<FormState>();
   final List<DropdownMenuItem<String>> _valueList = [
     const DropdownMenuItem(
@@ -230,17 +230,16 @@ class _AccountDataSource extends DataTableSource {
     ), 
   ];
 
-  _AccountDataSource(this.context) {
-    _accounts = []; 
-    getAccounts();
+  _AdminDataSource(this.context) {
+    _admins = []; 
+    getAdmins();
   }
 
   final BuildContext context;
-  late List<_Account> _accounts;
+  late List<_Admin> _admins;
 
-  void getAccounts() async {
+  void getAdmins() async {
     try {
-      log("getAdmins");
       var res = await http.get(
       Uri.parse(
         '$url/api/admin/getAdmins'),
@@ -254,16 +253,16 @@ class _AccountDataSource extends DataTableSource {
       var success = data['success'];
       if (success) {
         final admins = data['admins'];
-        _accounts.clear();
+        _admins.clear();
         for (int i = 0; i < admins.length; i++) {
           final admin = admins[i];
           log(admin.toString());
-          _accounts.add(
-            _Account(admin['id'], admin['name'], admin['email'], admin['role'], admin['createdAt'])
+          _admins.add(
+            _Admin(admin['id'], admin['name'], admin['email'], admin['role'], admin['createdAt'])
           );
         }
       } else {
-        _accounts = [];
+        _admins = [];
       }
 
       notifyListeners();
@@ -273,8 +272,8 @@ class _AccountDataSource extends DataTableSource {
   }
 
   int _selectedCount = 0;
-  void _sort<T>(Comparable<T> Function(_Account d) getField, bool ascending) {
-    _accounts.sort((a, b) {
+  void _sort<T>(Comparable<T> Function(_Admin d) getField, bool ascending) {
+    _admins.sort((a, b) {
       final aValue = getField(a);
       final bValue = getField(b);
       return ascending
@@ -308,7 +307,7 @@ class _AccountDataSource extends DataTableSource {
     }
   }
 
-  deleteAdmin(_Account account) async {
+  deleteAdmin(_Admin account) async {
     try {
       log("id : ${account.id}, role : ${account.role}");
       http.Response res = await http.delete(
@@ -330,7 +329,7 @@ class _AccountDataSource extends DataTableSource {
     }
   }
 
-  modifyAdmin(_Account account) async {
+  modifyAdmin(_Admin account) async {
     try {
       log("id : ${account.id}, role : ${account.role}");
       http.Response res = await http.put(
@@ -476,7 +475,7 @@ class _AccountDataSource extends DataTableSource {
                 Navigator.of(context).pop();
                 if (result) {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("추가 성공"));
-                  getAccounts();
+                  getAdmins();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("추가 실패"));
                 }
@@ -489,7 +488,7 @@ class _AccountDataSource extends DataTableSource {
     );
   }
 
-  modifyDialog(_Account account) {
+  modifyDialog(_Admin account) {
     var tempAccount = account.Copy();
 
     showDialog(
@@ -533,7 +532,7 @@ class _AccountDataSource extends DataTableSource {
                 Navigator.of(context).pop();
                 if (result) {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 성공"));
-                  getAccounts();
+                  getAdmins();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 실패"));
                 }
@@ -546,7 +545,7 @@ class _AccountDataSource extends DataTableSource {
                 Navigator.of(context).pop();
                 if (result) {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 성공"));
-                  getAccounts();
+                  getAdmins();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 실패"));
                 }
@@ -562,16 +561,16 @@ class _AccountDataSource extends DataTableSource {
   @override
   DataRow? getRow(int index) {
     assert(index >= 0);
-    if (index >= _accounts.length) return null;
-    final account = _accounts[index];
+    if (index >= _admins.length) return null;
+    final admin = _admins[index];
     return DataRow.byIndex(
       index: index,
       cells: [
-        DataCell(Text('${account.id}')),
-        DataCell(Text(account.name)),
-        DataCell(Text(account.email)),
-        DataCell(Text(account.role)),
-        DataCell(Text(account.createdAt)),
+        DataCell(Text('${admin.id}')),
+        DataCell(Text(admin.name)),
+        DataCell(Text(admin.email)),
+        DataCell(Text(admin.role)),
+        DataCell(Text(admin.createdAt)),
         DataCell(
           ElevatedButton(
             child: const Text("수정"),
@@ -579,7 +578,7 @@ class _AccountDataSource extends DataTableSource {
               backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
               alignment: Alignment.center
             ),
-            onPressed: () => modifyDialog(account),
+            onPressed: () => modifyDialog(admin),
           ),
         )
       ],
@@ -587,7 +586,7 @@ class _AccountDataSource extends DataTableSource {
   }
 
   @override
-  int get rowCount => _accounts.length;
+  int get rowCount => _admins.length;
 
   @override
   bool get isRowCountApproximate => false;
