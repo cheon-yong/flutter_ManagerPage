@@ -12,10 +12,10 @@ class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
 
   @override
-  AdminPageState createState() => AdminPageState();
+  _AdminPageState createState() => _AdminPageState();
 }
 
-class AdminPageState extends State<AdminPage> with RestorationMixin {
+class _AdminPageState extends State<AdminPage> with RestorationMixin {
   String token = "";
 
   final RestorableInt _rowIndex = RestorableInt(0);
@@ -94,7 +94,22 @@ class AdminPageState extends State<AdminPage> with RestorationMixin {
           restorationId: 'data_table_list_view',
           children: [
             PaginatedDataTable(
-              header: const Text("어드민 관리"),
+              header: Row(
+                children: [
+                  const Text(
+                    "어드민 관리"
+                  ),
+                  ElevatedButton(
+                    child: const Text("추가하기"),
+                    style: const ButtonStyle(
+                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+                      alignment: Alignment.center
+                    ),
+                    onPressed: () =>_accountDataSource?.createDialog(),
+                  )
+                ],
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
               rowsPerPage: _rowsPerPage.value,
               onRowsPerPageChanged: (value) {
                 setState(() {
@@ -269,6 +284,29 @@ class _AccountDataSource extends DataTableSource {
 
     notifyListeners();
   }
+  createAdmin(String email, String password, String name, String role) async {
+    try {
+      http.Response res = await http.post(
+        Uri.parse("$url/api/admin/createAdmin"),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': '*/*'
+        },
+        body: {
+          'email': email,
+          'password': password,
+          'name' : name,
+          'role' : role
+        }
+      );
+
+      var data = jsonDecode(res.body);
+      return data['success'];
+
+    } catch(error) {
+      log(error.toString());
+    }
+  }
 
   deleteAdmin(_Account account) async {
     try {
@@ -325,6 +363,132 @@ class _AccountDataSource extends DataTableSource {
     );
   }
 
+  Future<bool> validate() async {
+    if (formKey.currentState!.validate() == false) {
+      return false;
+    }
+
+    formKey.currentState!.save();
+
+    return true;
+  }
+
+  createDialog() {
+    String email = "";
+    String password = "";
+    String name = "";
+    String role = "normal";
+
+    showDialog(
+      context: context, 
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("관리자 계정 생성"),
+          content: Form(
+            key: formKey,
+            child: Container(
+              alignment: Alignment.center, 
+              height: 300,
+              margin: const EdgeInsets.all(10.0), 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: '이메일'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "이메일을 입력하세요";
+                      }
+                      final RegExp emailRegExp =
+                        RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+');
+
+                      if (!emailRegExp.hasMatch(value)) {
+                        return "이메일 형식이 아닙니다";
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      email = value!;
+                    },
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: '비밀번호'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "비밀번호를 입력하세요";
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      password = value!;
+                    },
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: '이름'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "이름을 입력하세요";
+                      }
+
+                      return null;
+                    },
+                    onSaved: (value) {
+                      name = value!;
+                    },
+                  ),
+                  DropdownButtonFormField(
+                    decoration: const InputDecoration(labelText: "권한"),
+                    items: _valueList,
+                    onChanged: ((value) {
+                      role = value.toString();
+                    }),
+
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "권한을 선택하세요";
+                      }
+                      
+                      return null;
+                    },
+                  )
+                ],
+              ),
+            )
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("취소")
+            ),
+            TextButton(
+              onPressed: () async {
+                var valid = await validate();
+                log("vaid : " + valid.toString());
+                if (!valid) {
+                  return;
+                }
+
+                log("$email, $password, $name, $role");
+                var result = await createAdmin(email, password, name, role);
+                Navigator.of(context).pop();
+                if (result) {
+                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("추가 성공"));
+                  getAccounts();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("추가 실패"));
+                }
+              },
+              child: const Text("추가")
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   modifyDialog(_Account account) {
     var tempAccount = account.Copy();
 
@@ -366,12 +530,11 @@ class _AccountDataSource extends DataTableSource {
             TextButton(
               onPressed: () async {
                 var result = await deleteAdmin(tempAccount);
+                Navigator.of(context).pop();
                 if (result) {
-                  Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 성공"));
                   getAccounts();
                 } else {
-                  Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 실패"));
                 }
               },
@@ -380,12 +543,11 @@ class _AccountDataSource extends DataTableSource {
             TextButton(
               onPressed: () async {
                 var result = await modifyAdmin(tempAccount);
+                Navigator.of(context).pop();
                 if (result) {
-                  Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 성공"));
                   getAccounts();
                 } else {
-                  Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 실패"));
                 }
               },
