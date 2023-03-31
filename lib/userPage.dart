@@ -1,21 +1,67 @@
-// ignore_for_file: library_private_types_in_public_api, sort_child_properties_last
+// ignore_for_file: library_private_types_in_public_api, sort_child_properties_last, avoid_print, prefer_typing_uninitialized_variables
 
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:html';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:url_launcher_web/url_launcher_web.dart';
+import 'package:path_provider/path_provider.dart';
 import 'main.dart';
+import 'package:excel/excel.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
 
   @override
-  _UserPageState createState() => _UserPageState();
+  UserPageState createState() => UserPageState();
 }
 
 const url = "http://localhost:8080";
+var comments;
 
-class _UserPageState extends State<UserPage> with RestorationMixin {
+class _RestorableReportSelections extends RestorableProperty<Set<int>> {
+  Set<int> _reportSelections = {};
+
+  bool isSelected(int id) => _reportSelections.contains(id);
+
+  void setReportSelections(List<_Report> reports) {
+    final updatedSet = <int>{};
+    for (var i = 0; i < reports.length; i += 1) {
+      var dessert = reports[i];
+      if (dessert.selected) {
+        updatedSet.add(i);
+      }
+    }
+    _reportSelections = updatedSet;
+    notifyListeners();
+  }
+  
+  @override
+  Set<int> createDefaultValue() => _reportSelections;
+  
+  @override
+  Set<int> fromPrimitives(Object? data) {
+    final selectedItemIndices = data as List<dynamic>;
+    _reportSelections = {
+      ...selectedItemIndices.map<int>((dynamic id) => id as int),
+    };
+    return _reportSelections;
+  }
+  
+  @override
+  void initWithValue(Set<int> value) {
+    _reportSelections = value;
+  }
+  
+  @override
+  Object? toPrimitives() => _reportSelections.toList();
+
+}
+
+class UserPageState extends State<UserPage> with RestorationMixin {
   String token = "";
   String uid = "";
   final formKey = GlobalKey<FormState>();
@@ -32,16 +78,22 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
     return true;
   }
 
+  final _RestorableReportSelections _reportSelections = _RestorableReportSelections();
   final RestorableInt _rowIndex = RestorableInt(0);
   final RestorableInt _rowsPerPage =
       RestorableInt(PaginatedDataTable.defaultRowsPerPage);
   final RestorableBool _sortAscending = RestorableBool(true);
   final RestorableIntN _sortColumnIndex = RestorableIntN(null);
-
   _ReportDataSource? _reportDataSource;
+
   @override
   void initState() {
     token = MyHomePageState.token;
+    rootBundle.loadString('assets/config/Comments.json')
+      .then((value) {
+        comments = json.decode(value);
+        log(comments.toString());
+      });
     super.initState();
   }
 
@@ -50,6 +102,7 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
 
   @override
   void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_reportSelections, 'selected_row_indices');
     registerForRestoration(_rowIndex, 'current_row_index');
     registerForRestoration(_rowsPerPage, 'rows_per_page');
     registerForRestoration(_sortAscending, 'sort_ascending');
@@ -71,12 +124,13 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
         _reportDataSource!._sort<String>((d) => d.completedAt, _sortAscending.value);
         break;
     }
+    _reportDataSource!.updateSelectedReports(_reportSelections);
+    _reportDataSource!.addListener(_updateSelectedReportRowListener);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _reportDataSource ??= _ReportDataSource(context);
+  
+  void _updateSelectedReportRowListener() {
+    _reportSelections.setReportSelections(_reportDataSource!._reports);
   }
 
   void _sort<T>(
@@ -91,11 +145,41 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
     });
   }
 
+  void exportExcel() async {
+    var account = _reportDataSource!._account;
+    var selectedReport = _reportDataSource!.getSelectedReport();
+
+    // Create Excel file
+    var excel = Excel.createExcel();
+    excel['Sheet1'].isRTL = false;
+
+    var sheet = excel['Sheet1'];
+    sheet.insertRowIterables(["번호", "UID", "아동나이", "아동성별", "생성 시간", "발달지원구간 점수", "발달지원구간 문구", "자폐위험도 점수", "자폐위험도 문구", "선별구간 점수", "선별구간 문구", "완료 시간"], 0);
+
+    for (int i = 0; i < selectedReport.length; i++) {
+      var report = selectedReport[i];
+      var dataList = [report.id.toString(), account.uid, account.age.toString(), account.gender.toString(), report.createdAt, report.mainScore.toString(), report.mainComment['section'], report.eyeScore.toString(), report.eyeComment['section'], report.pollScore.toString(), report.pollComment['section'], report.completedAt];
+      sheet.insertRowIterables(dataList, i + 1);
+    }
+
+    excel.save(fileName : "excel.xlsx");
+
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reportDataSource ??= _ReportDataSource(context);
+    _reportDataSource!.addListener(_updateSelectedReportRowListener);
+  }
+
+
   @override
   void dispose() {
     _rowsPerPage.dispose();
     _sortColumnIndex.dispose();
     _sortAscending.dispose();
+    _reportDataSource!.removeListener(_updateSelectedReportRowListener);
     _reportDataSource!.dispose();
     super.dispose();
   }
@@ -137,11 +221,19 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
                       onFieldSubmitted: (value) => validate(),
                     )
                   ),
+                  const SizedBox(width: 250),
                   ElevatedButton(
                     child: const Text(
                       "확인"
                     ),
                     onPressed: () => validate(), 
+                  ),
+                  const SizedBox(width: 40),
+                  ElevatedButton(
+                    child: const Text(
+                      "선택 다운"
+                    ),
+                    onPressed: () => exportExcel(), 
                   )
                 ]
               ),
@@ -152,10 +244,9 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
                 Text("uid : ${_reportDataSource!._account.uid}"),
                 Text("타입 : ${_reportDataSource!._account.type}"),
                 Text("성별 : ${_reportDataSource!._account.gender}"),
-                Text("uid : ${_reportDataSource!._account.age}"),
+                Text("나이 : ${_reportDataSource!._account.age}"),
               ]
             ),
-
             PaginatedDataTable(
               rowsPerPage: _rowsPerPage.value,
               onRowsPerPageChanged: (value) {
@@ -171,7 +262,8 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
               },
               sortColumnIndex: _sortColumnIndex.value,
               sortAscending: _sortAscending.value,
-              columnSpacing: 10.0,
+              onSelectAll: _reportDataSource!._selectAll,
+              columnSpacing: 0.0,
               columns: [
                 DataColumn(
                   label: Container(
@@ -199,7 +291,65 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
                 ),
                 DataColumn(
                   label: Container(
-                    child: const Text("점수"),
+                    child: const Text(
+                      "발달지원구간 점수",
+                      textAlign: TextAlign.center,
+                    ),
+                    width: 200,
+                  ),
+                  numeric: true,
+                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                ),
+                DataColumn(
+                  label: Container(
+                    child: const Text(
+                      "발달지원구간 문구",
+                      textAlign: TextAlign.center,
+                    ),
+                    width: 200,
+                  ),
+                  numeric: true,
+                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                ),
+                DataColumn(
+                  label: Container(
+                    child: const Text(
+                      "자폐위험도 점수",
+                      textAlign: TextAlign.center
+                    ),
+                    width: 200,
+                  ),
+                  numeric: true,
+                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                ),
+                DataColumn(
+                  label: Container(
+                    child: const Text(
+                      "자폐위험도 문구",
+                      textAlign: TextAlign.center
+                    ),
+                    width: 200,
+                  ),
+                  numeric: true,
+                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                ),
+                DataColumn(
+                  label: Container(
+                    child: const Text(
+                      "선별구간 점수",
+                      textAlign: TextAlign.center
+                    ),
+                    width: 200,
+                  ),
+                  numeric: true,
+                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                ),
+                DataColumn(
+                  label: Container(
+                    child: const Text(
+                      "선별구간 문구",
+                      textAlign: TextAlign.center
+                    ),
                     width: 200,
                   ),
                   numeric: true,
@@ -219,7 +369,7 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
                 DataColumn(
                   label: Container(
                     child: const Text(
-                      "수정",
+                      "상세",
                       textAlign: TextAlign.left,
                     ),
                     width: 30,
@@ -238,7 +388,7 @@ class _UserPageState extends State<UserPage> with RestorationMixin {
 }
 
 class _Account {
-  _Account(this.id, this.uid, this.type, this.gender, this.age, this.createdAt);
+  _Account(this.id, this.uid, this.type, this.gender, this.age, this.createdAt, this.father_age, this.mother_age);
 
   final int id;
   final String uid;
@@ -246,28 +396,87 @@ class _Account {
   final String gender;
   final int age;
   final String createdAt;
+  final int father_age;
+  final int mother_age;
 }
 
 class _Report {
-  _Report(this.id, this.createdAt, this.scores, this.completedAt);
+  _Report(
+    this.id, 
+    this.createdAt, 
+    this.completedAt, 
+    this.mainScore, 
+    this.mainComment, 
+    this.eyeScore, 
+    this.eyeComment, 
+    this.pollScore, 
+    this.pollComment
+  );
 
   final int id;
   final String createdAt;
-  final Object scores;
   final String completedAt;
+  final int mainScore;
+  final dynamic mainComment;
+  final int eyeScore;
+  final dynamic eyeComment;
+  final int pollScore;
+  final dynamic pollComment;
+  bool selected = false;
 }
 
 class _ReportDataSource extends DataTableSource {
   
   _ReportDataSource(this.context) {
     _reports = []; 
-    _account = _Account(0, "", "", "", 0, "");
+    _account = _Account(0, "", "", "", 0, "", 0, 0);
+    
   }
 
   final BuildContext context;
   late List<_Report> _reports;
   late _Account _account;
+
+  dynamic getMainComment(int score) {
+    var main = comments['main'];
+
+    if (score <= 25) {
+      return main[0];
+    } else if (score <= 50) {
+      return main[1];
+    } else if (score <= 75) {
+      return main[2];
+    } else {
+      return main[3];
+    }
+  }
   
+  dynamic getEyeComment(int score) {
+    var eye = comments['eye'];
+
+    if (score <= 30) {
+      return eye[0];
+    } else if (score <= 60) {
+      return eye[1];
+    } else {
+      return eye[2];
+    }
+  }
+
+  dynamic getPollComment(int score) {
+    var poll = comments['poll'];
+    if (score <= 57) {
+      return poll[0];
+    } else if (score <= 83) {
+      return poll[1];
+    } else if (score <= 108) {
+      return poll[2];
+    } else if (score <= 134) {
+      return poll[3];
+    } else {
+      return poll[4];
+    }
+  }
 
   Future<bool> getReports(String uid) async {
     try {
@@ -283,29 +492,45 @@ class _ReportDataSource extends DataTableSource {
 
       var data = jsonDecode(res.body);
       var success = data['success'];
-      log(data.toString());
       if (success) {
         var account = data['account'];
-        log(account.toString());
         _account = _Account(
           account['id'], 
           account['uid'],
           account['type'],
-          account['gender'] == null ? "Null" : account['gender'],
-          account['age'] == null ? 0 : account['age'],
-          account['createdAt'] == null ? "" : account['createdAt']
+          account['gender'] ?? "Null",
+          account['age'] ?? 0,
+          account['createdAt'] ?? "",
+          account['father_age'] ?? 0,
+          account['mother_age'] ?? 0
         );
 
-        // final reports = data['reports'];
-        // _reports.clear();
-        // for (int i = 0; i < reports.length; i++) {
-        //   final report = reports[i];
-        //   log(report.toString());
-        //   _reports.add(
-        //     //_Report(report['id'], report['name'], report['email'], report['role'], report['createdAt'])
-        //   );
-        // }
+        final reports = data['reports'];
+        _reports.clear();
+        for (int i = 0; i < reports.length; i++) {
+          final report = reports[i];
+          int mainScore = report['main_score'];
+          int eyeScore = report['eye_score'];
+          int pollScore = report['poll_score'];
 
+          var mainComment = getMainComment(mainScore);
+          var eyeComment = getEyeComment(eyeScore);
+          var pollComment = getPollComment(pollScore);
+
+          _reports.add(
+            _Report(
+              report['id'],
+              report['createdAt'],
+              report['completedAt'],
+              mainScore,
+              mainComment,
+              eyeScore,
+              eyeComment,
+              pollScore,
+              pollComment
+            )
+          );
+        }
         
       } else {
         _reports = [];
@@ -320,6 +545,33 @@ class _ReportDataSource extends DataTableSource {
   }
 
   int _selectedCount = 0;
+  void updateSelectedReports(_RestorableReportSelections selectedRows) {
+    _selectedCount = 0;
+    for (var i = 0; i < _reports.length; i += 1) {
+      var report = _reports[i];
+      if (selectedRows.isSelected(i)) {
+        report.selected = true;
+        _selectedCount += 1;
+      } else {
+        report.selected = false;
+      }
+    }
+    notifyListeners();
+  }
+
+  List<_Report> getSelectedReport() {
+    List<_Report> selectedReport = [];
+
+    for (var i = 0; i < _reports.length; i += 1) {
+      var report = _reports[i];
+      if (report.selected) {
+        selectedReport.add(report);
+      }
+    }
+
+    return selectedReport;
+  }
+
   void _sort<T>(Comparable<T> Function(_Report d) getField, bool ascending) {
     _reports.sort((a, b) {
       final aValue = getField(a);
@@ -342,6 +594,121 @@ class _ReportDataSource extends DataTableSource {
     );
   }
 
+  Column element(String title, String content, {double spacing = 10.0}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold
+          ),
+        ),
+        const SizedBox(height : 10.0),
+        Text(content),
+        SizedBox(height : spacing),
+      ]  
+    );
+  }
+  
+  detailDialog(_Report report, _Account account) {
+    showDialog(
+      context: context, 
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Container(
+            alignment: Alignment.topLeft,
+            child: const Text(
+              "유저 상세"
+            ),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.black,
+                )
+              )
+            ),
+          ),
+          content: Container(
+              alignment: Alignment.center, 
+              height: 800,
+              margin: const EdgeInsets.all(10.0), 
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      element("번호", '${account.id}'),
+                      element("로그인 & UID", "${account.type}, ${account.uid}"),
+                      element("아동 나이", '${account.age}'),
+                      element("아동 성별", account.gender),
+                      element("아버지 연령대", '${account.father_age}'),
+                      element("어머니 연령대", '${account.mother_age}')
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        right: BorderSide(
+                          color: Colors.black
+                        )
+                      )
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      element("리포트 선별 시점", report.createdAt, spacing : 20.0),
+                      element("발달 놀이 - 발달 지원 구간 점수", "${report.mainScore}", spacing : 20.0),
+                      element("발달 놀이 - 지원 내용 점수", "${report.mainScore}", spacing : 20.0),
+                      element("관찰 놀이 - 자폐위험도 점수", '${report.eyeScore}', spacing : 20.0),
+                      element("관찰 놀이 - 필요조치 점수", '${report.eyeScore}', spacing : 20.0),
+                      element("부모체크리스트 - 선별구간 점수", '${report.pollScore}', spacing : 20.0),
+                      element("부모체크리스트 - 자폐위험도 점수", '${report.pollScore}', spacing : 20.0),
+                      element("부모체크리스트 - 필요조치 점수", '${report.pollScore}', spacing : 20.0)
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      element("리포트 선별 시점", report.createdAt, spacing : 20.0),
+                      element("발달 놀이 - 발달 지원 구간 텍스트", report.mainComment['section'], spacing : 20.0),
+                      element("발달 놀이 - 지원 내용 텍스트", report.mainComment['detail'], spacing : 20.0),
+                      element("관찰 놀이 - 자폐위험도 선별 텍스트", report.eyeComment['section'], spacing : 20.0),
+                      element("관찰 놀이 - 필요조치 선별 텍스트", report.eyeComment['detail'], spacing : 20.0),
+                      element("부모체크리스트 - 선별구간 텍스트", report.pollComment['section'], spacing : 20.0),
+                      element("부모체크리스트 - 자폐위험도 텍스트", report.pollComment['risky'], spacing : 20.0),
+                      element("부모체크리스트 - 필요조치 텍스트", report.pollComment['detail'], spacing : 20.0)
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("닫기")
+            )
+          ],
+        );
+      },
+    );
+  }
+
   @override
   DataRow? getRow(int index) {
     assert(index >= 0);
@@ -349,20 +716,33 @@ class _ReportDataSource extends DataTableSource {
     final report = _reports[index];
     return DataRow.byIndex(
       index: index,
+      selected: report.selected,
+      onSelectChanged: (value) {
+        if (report.selected != value) {
+          _selectedCount += value! ? 1 : -1;
+          assert(_selectedCount >= 0);
+          report.selected = value;
+          notifyListeners();
+        }
+      },
       cells: [
         DataCell(Text('${report.id}')),
         DataCell(Text(report.createdAt)),
-        DataCell(Text(report.scores.toString())),
+        DataCell(Text('${report.mainScore}')),
+        DataCell(Text(report.mainComment['section'])),
+        DataCell(Text('${report.eyeScore}')),
+        DataCell(Text(report.eyeComment['section'])),
+        DataCell(Text('${report.pollScore}')),
+        DataCell(Text(report.pollComment['section'])),
         DataCell(Text(report.completedAt)),
-        DataCell(Text(report.createdAt)),
         DataCell(
           ElevatedButton(
-            child: const Text("수정"),
+            child: const Text("상세"),
             style: const ButtonStyle(
               backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
               alignment: Alignment.center
             ),
-            onPressed: () {},
+            onPressed: () => detailDialog(report, _account),
           ),
         )
       ],
@@ -377,4 +757,12 @@ class _ReportDataSource extends DataTableSource {
 
   @override
   int get selectedRowCount => _selectedCount;
+  
+  void _selectAll(bool? checked) {
+    for (final report in _reports) {
+      report.selected = checked ?? false;
+    }
+    _selectedCount = checked! ? _reports.length : 0;
+    notifyListeners();
+  }
 }
