@@ -19,7 +19,9 @@ class UserPage extends StatefulWidget {
   UserPageState createState() => UserPageState();
 }
 
-const url = "http://localhost:8080";
+//const url = "http://localhost:37235";
+String url = "http://ec2-43-200-219-190.ap-northeast-2.compute.amazonaws.com:37235";
+
 var comments;
 
 class _RestorableReportSelections extends RestorableProperty<Set<int>> {
@@ -62,7 +64,7 @@ class _RestorableReportSelections extends RestorableProperty<Set<int>> {
 }
 
 class UserPageState extends State<UserPage> with RestorationMixin {
-  String token = "";
+  String? token = "";
   String uid = "";
   final formKey = GlobalKey<FormState>();
   Future<bool> validate() async {

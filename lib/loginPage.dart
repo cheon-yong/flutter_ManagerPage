@@ -1,6 +1,6 @@
 // ignore_for_file: file_names, constant_identifier_names
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:developer';
@@ -18,13 +18,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static final storage = FlutterSecureStorage();
+  final _pref = SharedPreferences.getInstance();
   final formKey = GlobalKey<FormState>();
 
   String email = "";
   String password = "";
-  //String url = "http://ec2-43-200-219-190.ap-northeast-2.compute.amazonaws.com:37235";
-  String url = "http://localhost:8080";
+  String url = "http://ec2-43-200-219-190.ap-northeast-2.compute.amazonaws.com:37235";
+  //String url = "http://localhost:37235";
 
   void validateAndSave() async {
     if (formKey.currentState!.validate() == false) {
@@ -39,7 +39,8 @@ class _LoginPageState extends State<LoginPage> {
     var data = jsonDecode(res.body);
     var success = data['success'];    
     if (success) {
-      await storage.write(key: "token", value: data['token']);
+      final SharedPreferences prefs = await _pref;
+      await prefs.setString("token", data['token']);
       Navigator.push(context, MaterialPageRoute(builder: (context) => const MyHomePage(title: "메인페이지")));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("아이디 또는 비밀번호가 올바르지 않습니다"));

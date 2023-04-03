@@ -2,7 +2,7 @@
 
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:iboamanager/StatisticsPage.dart';
 import 'package:iboamanager/UserPage.dart';
 import 'package:iboamanager/loginPage.dart';
@@ -28,8 +28,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blueGrey,
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: const MyHomePage(title: 'Iboa Manager'),
-      //home : const LoginPage(),
+      //home: const MyHomePage(title: 'Iboa Manager'),
+      home : const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -47,8 +47,8 @@ class MyHomePageState extends State<MyHomePage> {
   PageController page = PageController();
   SideMenuController sideMenu = SideMenuController();
 
-  static final storage = FlutterSecureStorage();
-  static String token = "";
+  final _pref = SharedPreferences.getInstance();
+  static String? token = "";
 
   @override
   void initState() {
@@ -60,11 +60,10 @@ class MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
-  void getToken() {
-    storage.read(key: "token")
-    .then((value) {
-      token = value.toString();
-    });
+  void getToken() async {
+    final SharedPreferences prefs = await _pref;
+
+    token = prefs.getString("token");
   }
   
   @override

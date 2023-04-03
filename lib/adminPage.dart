@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:iboamanager/main.dart';
 
-const url = "http://localhost:8080";
+//const url = "http://localhost:37235";
+String url = "http://ec2-43-200-219-190.ap-northeast-2.compute.amazonaws.com:37235";
+
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -16,7 +18,7 @@ class AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<AdminPage> with RestorationMixin {
-  String token = "";
+  String? token = "";
 
   final RestorableInt _rowIndex = RestorableInt(0);
   final RestorableInt _rowsPerPage =
