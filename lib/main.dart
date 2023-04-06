@@ -28,8 +28,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blueGrey,
         scaffoldBackgroundColor: Colors.white,
       ),
-      //home: const MyHomePage(title: 'Iboa Manager'),
-      home : const LoginPage(),
+      home: const MyHomePage(title: 'Iboa Manager'),
+      //home : const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }

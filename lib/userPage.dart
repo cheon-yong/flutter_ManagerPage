@@ -94,8 +94,8 @@ class UserPageState extends State<UserPage> with RestorationMixin {
     rootBundle.loadString('assets/config/Comments.json')
       .then((value) {
         comments = json.decode(value);
-        log(comments.toString());
       });
+
     super.initState();
   }
 
@@ -280,12 +280,13 @@ class UserPageState extends State<UserPage> with RestorationMixin {
                       _sort<num>((d) => d.id, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: Container(
-                    child: const Text(
+                  label: const Row(
+                    children: [
+                      Text(
                       "생성 시간",
                       textAlign: TextAlign.center,
-                    ),
-                    width: 200,
+                      ),
+                    ]
                   ),
                   numeric: true,
                   onSort: (columnIndex, ascending) =>
@@ -404,7 +405,14 @@ class _Account {
 
 class _Report {
   _Report(
-    this.id, 
+    this.id,
+    this.account_id,
+    this.uid,
+    this.type,
+    this.age,
+    this.gender,
+    this.father_age,
+    this.mother_age,
     this.createdAt, 
     this.completedAt, 
     this.mainScore, 
@@ -416,6 +424,13 @@ class _Report {
   );
 
   final int id;
+  final int account_id;
+  final String uid;
+  final String type;
+  final int age;
+  final String gender;
+  final int father_age;
+  final int mother_age;
   final String createdAt;
   final String completedAt;
   final int mainScore;
@@ -432,7 +447,7 @@ class _ReportDataSource extends DataTableSource {
   _ReportDataSource(this.context) {
     _reports = []; 
     _account = _Account(0, "", "", "", 0, "", 0, 0);
-    
+    getReports("");
   }
 
   final BuildContext context;
@@ -496,16 +511,30 @@ class _ReportDataSource extends DataTableSource {
       var success = data['success'];
       if (success) {
         var account = data['account'];
-        _account = _Account(
-          account['id'], 
-          account['uid'],
-          account['type'],
-          account['gender'] ?? "Null",
-          account['age'] ?? 0,
-          account['createdAt'] ?? "",
-          account['father_age'] ?? 0,
-          account['mother_age'] ?? 0
-        );
+        if (account != null) {
+          _account = _Account(
+            account['id'] ?? 0, 
+            account['uid'] ?? "",
+            account['type'] ?? "",
+            account['gender'] ?? "Null",
+            account['age'] ?? 0,
+            account['createdAt'] ?? "",
+            account['father_age'] ?? 0,
+            account['mother_age'] ?? 0
+          );
+        } else {
+          _account = _Account(
+            0, 
+            "",
+            "",
+            "",
+            0,
+            "",
+            0,
+            0
+          );
+        }
+        
 
         final reports = data['reports'];
         _reports.clear();
@@ -522,8 +551,15 @@ class _ReportDataSource extends DataTableSource {
           _reports.add(
             _Report(
               report['id'],
+              report['account_id'] ?? 0,
+              report['uid'] ?? "",
+              report['type'] ?? "",
+              report['age'] ?? 0,
+              report['gender'] ?? 0,
+              report['father_age'] ?? 0,
+              report['mother_age'] ?? 0,
               report['createdAt'],
-              report['completedAt'],
+              report['completedAt'] ?? "",
               mainScore,
               mainComment,
               eyeScore,
@@ -643,12 +679,13 @@ class _ReportDataSource extends DataTableSource {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      element("번호", '${account.id}'),
-                      element("로그인 & UID", "${account.type}, ${account.uid}"),
-                      element("아동 나이", '${account.age}'),
-                      element("아동 성별", account.gender),
-                      element("아버지 연령대", '${account.father_age}'),
-                      element("어머니 연령대", '${account.mother_age}')
+                      element("계정 번호", '${report.account_id}'),
+                      element("레포트 번호", '${report.id}'),
+                      element("로그인 & UID", "${report.type}, ${report.uid}"),
+                      element("아동 나이", '${report.age}'),
+                      element("아동 성별", report.gender),
+                      element("아버지 연령대", '${report.father_age}'),
+                      element("어머니 연령대", '${report.mother_age}')
                     ],
                   ),
                   const SizedBox(

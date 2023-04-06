@@ -62,7 +62,9 @@ class _LoginPageState extends State<LoginPage> {
       Uri.parse("$url/api/admin/login"),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': '*/*'
+        'Accept': '*/*',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'true'
       },
       body: {
         'email': email,

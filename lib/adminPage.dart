@@ -126,72 +126,128 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
               },
               sortColumnIndex: _sortColumnIndex.value,
               sortAscending: _sortAscending.value,
-              columnSpacing: 10.0,
+              columnSpacing: 80,
+              // columns: [
+              //   DataColumn(
+              //     label: const Flexible(
+              //       child: Text(
+              //         "번호",
+              //         textAlign: TextAlign.center,
+              //       ),
+              //     ),
+              //     //numeric: true,
+              //     onSort: (columnIndex, ascending) =>
+              //         _sort<num>((d) => d.id, columnIndex, ascending),
+              //   ),
+              //   DataColumn(
+              //     label: const Flexible(
+              //       child: Text(
+              //         "이름",
+              //         textAlign: TextAlign.center,
+              //       ),
+              //     ),
+              //     numeric: true,
+              //     onSort: (columnIndex, ascending) =>
+              //         _sort<String>((d) => d.name, columnIndex, ascending),
+              //   ),
+              //   DataColumn(
+              //     label: const Flexible(
+              //       child: Text("이메일"),
+              //     ),
+              //     numeric: true,
+              //     onSort: (columnIndex, ascending) =>
+              //         _sort<String>((d) => d.email, columnIndex, ascending),
+              //   ),
+              //   DataColumn(
+              //     label: const Flexible(
+              //       child: Text("권한"),
+              //     ),
+              //     numeric: true,
+              //     onSort: (columnIndex, ascending) =>
+              //         _sort<String>((d) => d.role, columnIndex, ascending),
+              //   ),
+              //   DataColumn(
+              //     label: const Flexible(
+              //       child: Text(
+              //         "생성일",
+              //         textAlign: TextAlign.center,
+              //       ),
+              //     ),
+              //     numeric: true,
+              //     onSort: (columnIndex, ascending) => _sort<String>(
+              //         (d) => d.createdAt, columnIndex, ascending),
+              //   ),
+              //   DataColumn(
+              //     label: const Flexible(
+              //       child: Text(
+              //         "수정",
+              //         textAlign: TextAlign.center,
+              //       ),
+              //     ),
+              //     numeric: true,
+              //     onSort: (columnIndex, ascending) =>
+              //         _sort<String>((d) => d.role, columnIndex, ascending),
+              //   ),
+              // ],
               columns: [
                 DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "번호",
+                  label: const Expanded(
+                    child: Text(
+                      " 번호",
                       textAlign: TextAlign.center,
                     ),
-                    width: 30,
+                    //color: Colors.blue,
                   ),
-                  numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<num>((d) => d.id, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "이름",
+                  label: const Expanded(
+                    child: Text(
+                      " 이름",
                       textAlign: TextAlign.center,
                     ),
-                    width: 30,
                   ),
-                  numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<String>((d) => d.name, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: Container(
-                    child: const Text("이메일"),
-                    width: 40,
+                  label: const Expanded(
+                    child: Text(
+                    "이메일",
+                    textAlign: TextAlign.center
+                    ),
                   ),
-                  numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<String>((d) => d.email, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: Container(
-                    child: const Text("권한"),
-                    width: 30,
+                  label: const Expanded(
+                    child: Text(
+                    "권한",
+                    textAlign: TextAlign.center
+                    ),
                   ),
-                  numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<String>((d) => d.role, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: Container(
-                    child: const Text(
+                  label: const Expanded(
+                    child: Text(
                       "생성일",
                       textAlign: TextAlign.center,
                     ),
-                    width: 1000,
                   ),
-                  numeric: true,
                   onSort: (columnIndex, ascending) => _sort<String>(
                       (d) => d.createdAt, columnIndex, ascending),
                 ),
                 DataColumn(
-                  label: Container(
-                    child: const Text(
+                  label: const Expanded(
+                    child: Text(
                       "수정",
                       textAlign: TextAlign.center,
-                    ),
-                    width: 30,
-                    alignment: Alignment.center,
+                    )
                   ),
-                  numeric: true,
                   onSort: (columnIndex, ascending) =>
                       _sort<String>((d) => d.role, columnIndex, ascending),
                 ),
@@ -568,20 +624,59 @@ class _AdminDataSource extends DataTableSource {
     return DataRow.byIndex(
       index: index,
       cells: [
-        DataCell(Text('${admin.id}')),
-        DataCell(Text(admin.name)),
-        DataCell(Text(admin.email)),
-        DataCell(Text(admin.role)),
-        DataCell(Text(admin.createdAt)),
         DataCell(
-          ElevatedButton(
-            child: const Text("수정"),
-            style: const ButtonStyle(
-              backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
-              alignment: Alignment.center
+          Center(
+            child : Text(
+                '${admin.id}',
+                textAlign: TextAlign.center,
             ),
-            onPressed: () => modifyDialog(admin),
           ),
+        ),
+        DataCell(
+          Center(
+            child: 
+              Text(
+                admin.name,
+                textAlign: TextAlign.center,
+              )
+            ,
+          )
+        ),
+        DataCell(
+          Center(
+            child: Text(
+              admin.email,
+              textAlign: TextAlign.center,
+            ),
+          )
+        ),
+        DataCell(
+          Center(
+            child: Text(
+              admin.role,
+              textAlign: TextAlign.center,
+            ),
+          )
+        ),
+        DataCell(
+          Center(
+            child: Text(
+              admin.createdAt,
+              textAlign: TextAlign.center,
+            ),
+          )
+        ),
+        DataCell(
+          Center(
+            child: ElevatedButton(
+              child: const Text("수정"),
+              style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+                alignment: Alignment.center
+              ),
+              onPressed: () => modifyDialog(admin),
+            ),
+          )
         )
       ],
     );
