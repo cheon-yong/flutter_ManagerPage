@@ -3,6 +3,9 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:html';
+import 'dart:js_interop';
+import 'dart:ui';
+import 'package:adaptive_scrollbar/adaptive_scrollbar.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +14,7 @@ import 'package:url_launcher_web/url_launcher_web.dart';
 import 'package:path_provider/path_provider.dart';
 import 'main.dart';
 import 'package:excel/excel.dart';
+import 'package:intl/intl.dart'; 
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -67,6 +71,9 @@ class UserPageState extends State<UserPage> with RestorationMixin {
   String? token = "";
   String uid = "";
   final formKey = GlobalKey<FormState>();
+  final ScrollController verticalScroll = ScrollController();
+  final ScrollController horizontalScroll = ScrollController();
+
   Future<bool> validate() async {
     if (formKey.currentState!.validate() == false) {
       return false;
@@ -86,6 +93,7 @@ class UserPageState extends State<UserPage> with RestorationMixin {
       RestorableInt(PaginatedDataTable.defaultRowsPerPage);
   final RestorableBool _sortAscending = RestorableBool(true);
   final RestorableIntN _sortColumnIndex = RestorableIntN(null);
+  final _availableRowPerPage = [10, 15, 30];
   _ReportDataSource? _reportDataSource;
 
   @override
@@ -148,7 +156,7 @@ class UserPageState extends State<UserPage> with RestorationMixin {
   }
 
   void exportExcel() async {
-    var account = _reportDataSource!._account;
+    //var account = _reportDataSource!._account;
     var selectedReport = _reportDataSource!.getSelectedReport();
 
     // Create Excel file
@@ -160,7 +168,7 @@ class UserPageState extends State<UserPage> with RestorationMixin {
 
     for (int i = 0; i < selectedReport.length; i++) {
       var report = selectedReport[i];
-      var dataList = [report.id.toString(), account.uid, account.age.toString(), account.gender.toString(), report.createdAt, report.mainScore.toString(), report.mainComment['section'], report.eyeScore.toString(), report.eyeComment['section'], report.pollScore.toString(), report.pollComment['section'], report.completedAt];
+      var dataList = [report.id.toString(), report.uid, report.age.toString(), report.gender.toString(), report.createdAt, report.mainScore.toString(), report.mainComment['section'], report.eyeScore.toString(), report.eyeComment['section'], report.pollScore.toString(), report.pollComment['section'], report.completedAt];
       sheet.insertRowIterables(dataList, i + 1);
     }
 
@@ -186,204 +194,204 @@ class UserPageState extends State<UserPage> with RestorationMixin {
     super.dispose();
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Scrollbar(
-        child: ListView(
-          restorationId: 'data_table_list_view',
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              child: const Text(
-                "유저 관리",
-                style: TextStyle(
-                  fontSize: 24.0,
-                  //fontWeight: FontWeight.w400
-                ),
-              )
-            ),
-            Form(
-              key : formKey,
-              child: Row(
-                children: <Widget>[
-                  Flexible(
-                    child: TextFormField(
-                      decoration: const InputDecoration(labelText: 'UID'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "UID을 입력하세요";
-                        }
-
-                        return null;
-                      },
-                      onSaved: (value) {
-                        uid = value!;
-                      },
-                      onFieldSubmitted: (value) => validate(),
-                    )
+      body: AdaptiveScrollbar(
+        controller: verticalScroll,
+        position: ScrollbarPosition.right,
+        child: AdaptiveScrollbar(
+          //thumbVisibility: true,
+          controller: horizontalScroll,
+          position: ScrollbarPosition.bottom,
+          child: ListView(
+            restorationId: 'data_table_list_view',
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                child: const Text(
+                  "유저 관리",
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    //fontWeight: FontWeight.w400
                   ),
-                  const SizedBox(width: 250),
-                  ElevatedButton(
-                    child: const Text(
-                      "확인"
-                    ),
-                    onPressed: () => validate(), 
-                  ),
-                  const SizedBox(width: 40),
-                  ElevatedButton(
-                    child: const Text(
-                      "선택 다운"
-                    ),
-                    onPressed: () => exportExcel(), 
-                  )
-                ]
+                )
               ),
-            ),
-            Row(
-              children : [
-                Text("id : ${_reportDataSource!._account.id}"),
-                Text("uid : ${_reportDataSource!._account.uid}"),
-                Text("타입 : ${_reportDataSource!._account.type}"),
-                Text("성별 : ${_reportDataSource!._account.gender}"),
-                Text("나이 : ${_reportDataSource!._account.age}"),
-              ]
-            ),
-            PaginatedDataTable(
-              rowsPerPage: _rowsPerPage.value,
-              onRowsPerPageChanged: (value) {
-                setState(() {
-                  _rowsPerPage.value = value!;
-                });
-              },
-              initialFirstRowIndex: _rowIndex.value,
-              onPageChanged: (rowIndex) {
-                setState(() {
-                  _rowIndex.value = rowIndex;
-                });
-              },
-              sortColumnIndex: _sortColumnIndex.value,
-              sortAscending: _sortAscending.value,
-              onSelectAll: _reportDataSource!._selectAll,
-              columnSpacing: 0.0,
-              columns: [
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "번호",
-                      textAlign: TextAlign.center,
+              Form(
+                key : formKey,
+                child: Row(
+                  children: <Widget>[
+                    const SizedBox(
+                      width: 41,
                     ),
-                    width: 30,
-                  ),
-                  numeric: true,
-                  onSort: (columnIndex, ascending) =>
-                      _sort<num>((d) => d.id, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: const Row(
-                    children: [
-                      Text(
-                      "생성 시간",
-                      textAlign: TextAlign.center,
+                    Flexible(
+                      child: TextFormField(
+                        decoration: const InputDecoration(
+                          //labelText: 'UID',
+                          hintText: "UID를 입력하세요",
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return "UID을 입력하세요";
+                          }
+
+                          return null;
+                        },
+                        onSaved: (value) {
+                          uid = value!;
+                        },
+                        onFieldSubmitted: (value) => validate(),
+                      )
+                    ),
+                    const SizedBox(width: 200),
+                    ElevatedButton(
+                      child: const Text(
+                        "확인"
                       ),
-                    ]
-                  ),
-                  numeric: true,
-                  onSort: (columnIndex, ascending) =>
-                      _sort<String>((d) => d.completedAt, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "발달지원구간 점수",
-                      textAlign: TextAlign.center,
+                      onPressed: () => validate(), 
                     ),
-                    width: 200,
-                  ),
-                  numeric: true,
-                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "발달지원구간 문구",
-                      textAlign: TextAlign.center,
+                    const SizedBox(width: 20),
+                    ElevatedButton(
+                      child: const Text(
+                        "선택 다운"
+                      ),
+                      onPressed: () => exportExcel(), 
                     ),
-                    width: 200,
-                  ),
-                  numeric: true,
-                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                    const SizedBox(width: 39)
+                  ]
                 ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "자폐위험도 점수",
-                      textAlign: TextAlign.center
+              ),
+              PaginatedDataTable(
+                showCheckboxColumn: true,
+                rowsPerPage: _rowsPerPage.value,
+                //availableRowsPerPage: _availableRowPerPage,
+                onRowsPerPageChanged: (value) {
+                  setState(() {
+                    _rowsPerPage.value = value!;
+                  });
+                },
+                initialFirstRowIndex: _rowIndex.value,
+                onPageChanged: (rowIndex) {
+                  setState(() {
+                    _rowIndex.value = rowIndex;
+                  });
+                },
+                sortColumnIndex: _sortColumnIndex.value,
+                sortAscending: _sortAscending.value,
+                onSelectAll: _reportDataSource!._selectAll,
+                columnSpacing: 90.0,
+                columns: [
+                  DataColumn(
+                    label: const Expanded(
+                      child: Text(
+                        "ㅤ번호",
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    width: 200,
+                    //numeric: true,
+                    onSort: (columnIndex, ascending) =>
+                        _sort<num>((d) => d.id, columnIndex, ascending),
                   ),
-                  numeric: true,
-                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "자폐위험도 문구",
-                      textAlign: TextAlign.center
+                  DataColumn(
+                    label: const Expanded(
+                      child: 
+                        Text(
+                        "ㅤ생성 시간",
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    width: 200,
+                    onSort: (columnIndex, ascending) =>
+                        _sort<String>((d) => d.completedAt, columnIndex, ascending),
                   ),
-                  numeric: true,
-                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "선별구간 점수",
-                      textAlign: TextAlign.center
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "발달지원구간 점수",
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    width: 200,
+                    //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
                   ),
-                  numeric: true,
-                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "선별구간 문구",
-                      textAlign: TextAlign.center
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "발달지원구간 문구",
+                        textAlign: TextAlign.center,
+                      )
                     ),
-                    width: 200,
+                    //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
                   ),
-                  numeric: true,
-                  //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "완료 시간"
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "자폐위험도 점수",
+                        textAlign: TextAlign.center
+                      ),
                     ),
-                    width: 200,
+                    numeric: true,
+                    //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
                   ),
-                  numeric: true,
-                  onSort: (columnIndex, ascending) =>
-                      _sort<String>((d) => d.completedAt, columnIndex, ascending),
-                ),
-                DataColumn(
-                  label: Container(
-                    child: const Text(
-                      "상세",
-                      textAlign: TextAlign.left,
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "자폐위험도 문구",
+                        textAlign: TextAlign.center
+                      ),
                     ),
-                    width: 30,
-                    alignment: Alignment.centerLeft,
+                    //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
                   ),
-                  numeric: true,
-                ),
-              ],
-              source: _reportDataSource!,
-            ),
-          ],
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "선별구간 점수",
+                        textAlign: TextAlign.center
+                      )
+                    ),
+                    numeric: true,
+                    //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                  ),
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "선별구간 문구",
+                        textAlign: TextAlign.center
+                      )
+                    ),
+                    //onSort: (columnIndex, ascending) =>_sort<String>((d) => d.email, columnIndex, ascending),
+                  ),
+                  DataColumn(
+                    label: const Expanded(
+                      child: Text(
+                        "ㅤ완료 시간",
+                        textAlign: TextAlign.center,
+                      )
+                    ),
+                    onSort: (columnIndex, ascending) =>
+                        _sort<String>((d) => d.completedAt, columnIndex, ascending),
+                  ),
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "상세",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  const DataColumn(
+                    label: Expanded(
+                      child: Text(
+                        "로그 상세",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+                source: _reportDataSource!,
+              ),
+            ],
+          ),
         )
       ),
     );
@@ -547,6 +555,8 @@ class _ReportDataSource extends DataTableSource {
           var mainComment = getMainComment(mainScore);
           var eyeComment = getEyeComment(eyeScore);
           var pollComment = getPollComment(pollScore);
+          var createdAt = simpleDate(report['createdAt'] as String);
+          var completedAt = simpleDate(report['completedAt'] ?? "");
 
           _reports.add(
             _Report(
@@ -558,8 +568,8 @@ class _ReportDataSource extends DataTableSource {
               report['gender'] ?? 0,
               report['father_age'] ?? 0,
               report['mother_age'] ?? 0,
-              report['createdAt'],
-              report['completedAt'] ?? "",
+              createdAt,
+              completedAt,
               mainScore,
               mainComment,
               eyeScore,
@@ -595,6 +605,18 @@ class _ReportDataSource extends DataTableSource {
       }
     }
     notifyListeners();
+  }
+
+  String simpleDate(String date) {
+    if (date.isNull || date.isEmpty) {
+      return "";
+    }
+
+    var newDate = date.replaceAll("T", " ");
+    var dotIndex = newDate.indexOf(".");
+    newDate = newDate.replaceRange(dotIndex, date.length, " ").trimRight();
+
+    return newDate;
   }
 
   List<_Report> getSelectedReport() {
@@ -748,10 +770,15 @@ class _ReportDataSource extends DataTableSource {
     );
   }
 
+  downloadLog(int report_id) {
+
+  }
+
   @override
   DataRow? getRow(int index) {
     assert(index >= 0);
-    if (index >= _reports.length) return null;
+    //if (index >= _reports.length) return null;
+    log("index : $index");
     final report = _reports[index];
     return DataRow.byIndex(
       index: index,
@@ -765,24 +792,103 @@ class _ReportDataSource extends DataTableSource {
         }
       },
       cells: [
-        DataCell(Text('${report.id}')),
-        DataCell(Text(report.createdAt)),
-        DataCell(Text('${report.mainScore}')),
-        DataCell(Text(report.mainComment['section'])),
-        DataCell(Text('${report.eyeScore}')),
-        DataCell(Text(report.eyeComment['section'])),
-        DataCell(Text('${report.pollScore}')),
-        DataCell(Text(report.pollComment['section'])),
-        DataCell(Text(report.completedAt)),
         DataCell(
-          ElevatedButton(
-            child: const Text("상세"),
-            style: const ButtonStyle(
-              backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
-              alignment: Alignment.center
+          Center(
+            child : Text(
+              '${report.id}',
+              textAlign: TextAlign.center,
             ),
-            onPressed: () => detailDialog(report, _account),
-          ),
+            //alignment: Alignment.center,
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              report.createdAt,
+              textAlign: TextAlign.center,
+            ),
+            //alignment: Alignment.center,
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              '${report.mainScore}',
+              textAlign: TextAlign.center,
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              report.mainComment['section'],
+              textAlign: TextAlign.center,
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              '${report.eyeScore}',
+              textAlign: TextAlign.center,
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              report.eyeComment['section'],
+              textAlign: TextAlign.center,
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              '${report.pollScore}',
+              textAlign: TextAlign.center,
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              report.pollComment['section'],
+              textAlign: TextAlign.center,
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : Text(
+              report.completedAt,
+              textAlign: TextAlign.center,
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : ElevatedButton(
+              child: const Text("상세"),
+              style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+                alignment: Alignment.center
+              ),
+              onPressed: () => detailDialog(report, _account),
+            )
+          )
+        ),
+        DataCell(
+          Center(
+            child : ElevatedButton(
+              child: const Text("로그 상세"),
+              style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+                alignment: Alignment.center
+              ),
+              onPressed: () => downloadLog(report.id),
+            )
+          )
         )
       ],
     );

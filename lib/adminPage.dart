@@ -126,74 +126,12 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
               },
               sortColumnIndex: _sortColumnIndex.value,
               sortAscending: _sortAscending.value,
-              columnSpacing: 80,
-              // columns: [
-              //   DataColumn(
-              //     label: const Flexible(
-              //       child: Text(
-              //         "번호",
-              //         textAlign: TextAlign.center,
-              //       ),
-              //     ),
-              //     //numeric: true,
-              //     onSort: (columnIndex, ascending) =>
-              //         _sort<num>((d) => d.id, columnIndex, ascending),
-              //   ),
-              //   DataColumn(
-              //     label: const Flexible(
-              //       child: Text(
-              //         "이름",
-              //         textAlign: TextAlign.center,
-              //       ),
-              //     ),
-              //     numeric: true,
-              //     onSort: (columnIndex, ascending) =>
-              //         _sort<String>((d) => d.name, columnIndex, ascending),
-              //   ),
-              //   DataColumn(
-              //     label: const Flexible(
-              //       child: Text("이메일"),
-              //     ),
-              //     numeric: true,
-              //     onSort: (columnIndex, ascending) =>
-              //         _sort<String>((d) => d.email, columnIndex, ascending),
-              //   ),
-              //   DataColumn(
-              //     label: const Flexible(
-              //       child: Text("권한"),
-              //     ),
-              //     numeric: true,
-              //     onSort: (columnIndex, ascending) =>
-              //         _sort<String>((d) => d.role, columnIndex, ascending),
-              //   ),
-              //   DataColumn(
-              //     label: const Flexible(
-              //       child: Text(
-              //         "생성일",
-              //         textAlign: TextAlign.center,
-              //       ),
-              //     ),
-              //     numeric: true,
-              //     onSort: (columnIndex, ascending) => _sort<String>(
-              //         (d) => d.createdAt, columnIndex, ascending),
-              //   ),
-              //   DataColumn(
-              //     label: const Flexible(
-              //       child: Text(
-              //         "수정",
-              //         textAlign: TextAlign.center,
-              //       ),
-              //     ),
-              //     numeric: true,
-              //     onSort: (columnIndex, ascending) =>
-              //         _sort<String>((d) => d.role, columnIndex, ascending),
-              //   ),
-              // ],
+              columnSpacing: 90,
               columns: [
                 DataColumn(
                   label: const Expanded(
                     child: Text(
-                      " 번호",
+                      "ㅤ번호",
                       textAlign: TextAlign.center,
                     ),
                     //color: Colors.blue,
@@ -204,17 +142,16 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
                 DataColumn(
                   label: const Expanded(
                     child: Text(
-                      " 이름",
-                      textAlign: TextAlign.center,
-                    ),
+                        "ㅤ이름",
+                        textAlign: TextAlign.center,
+                      )
                   ),
-                  onSort: (columnIndex, ascending) =>
-                      _sort<String>((d) => d.name, columnIndex, ascending),
+                  onSort: (columnIndex, ascending) => _sort<String>((d) => d.name, columnIndex, ascending),
                 ),
                 DataColumn(
                   label: const Expanded(
                     child: Text(
-                    "이메일",
+                    "ㅤ이메일",
                     textAlign: TextAlign.center
                     ),
                   ),
@@ -224,7 +161,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
                 DataColumn(
                   label: const Expanded(
                     child: Text(
-                    "권한",
+                    "ㅤ권한",
                     textAlign: TextAlign.center
                     ),
                   ),
@@ -234,7 +171,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
                 DataColumn(
                   label: const Expanded(
                     child: Text(
-                      "생성일",
+                      "ㅤ생성일",
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -244,7 +181,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
                 DataColumn(
                   label: const Expanded(
                     child: Text(
-                      "수정",
+                      "ㅤ수정",
                       textAlign: TextAlign.center,
                     )
                   ),

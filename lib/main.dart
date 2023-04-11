@@ -1,13 +1,26 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables
 
+import 'dart:ui';
+
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import 'package:flutter/material.dart';
+import 'package:iboamanager/captchaPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:iboamanager/StatisticsPage.dart';
 import 'package:iboamanager/UserPage.dart';
 import 'package:iboamanager/loginPage.dart';
 import 'dart:developer';
 import 'adminPage.dart';
+
+
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  // Override behavior methods and getters like dragDevices
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+      };
+}
 
 void main() {
   runApp(const MyApp());
@@ -19,6 +32,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scrollBehavior: MyCustomScrollBehavior(),
       title: 'Iboa Manager',
       theme: ThemeData(
         fontFamily: 'NotoSansKR',
@@ -170,17 +184,27 @@ class MyHomePageState extends State<MyHomePage> {
                 onTap: (page, _) {
                   sideMenu.changePage(page);
                 },
-                icon: const Icon(Icons.download),
+                icon: const Icon(Icons.auto_graph_outlined),
+              ),
+              SideMenuItem(
+                priority: 3,
+                title: '캡챠 관리',
+                onTap: (page, _) {
+                  sideMenu.changePage(page);
+                },
+                icon: const Icon(Icons.password_outlined),
               ),
             ],
           ),
           Expanded(
             child: PageView(
+              physics: const NeverScrollableScrollPhysics(),
               controller: page,
               children: [
                 const AdminPage(),
                 const UserPage(),
                 const StatisticsPage(),
+                const CaptchaPage(),
               ],
             ),
           ),
