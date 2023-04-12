@@ -70,7 +70,6 @@ class MyHomePageState extends State<MyHomePage> {
       page.jumpToPage(p0);
     });
     getToken();
-    //log("token : " + token);
     super.initState();
   }
 
@@ -80,7 +79,7 @@ class MyHomePageState extends State<MyHomePage> {
     token = prefs.getString("token");
   }
   
-  @override
+  @override 
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

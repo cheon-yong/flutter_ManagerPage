@@ -71,6 +71,7 @@ flutter:
     - assets/images/eyesonicon.png
     - assets/config/url.json
     - assets/config/Comments.json
+    - assets/config/Problems.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

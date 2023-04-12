@@ -27,6 +27,7 @@ class UserPage extends StatefulWidget {
 String url = "http://ec2-43-200-219-190.ap-northeast-2.compute.amazonaws.com:37235";
 
 var comments;
+var problems;
 
 class _RestorableReportSelections extends RestorableProperty<Set<int>> {
   Set<int> _reportSelections = {};
@@ -102,6 +103,12 @@ class UserPageState extends State<UserPage> with RestorationMixin {
     rootBundle.loadString('assets/config/Comments.json')
       .then((value) {
         comments = json.decode(value);
+      });
+
+    rootBundle.loadString('assets/config/Problems.json')
+      .then((value) {
+        problems = json.decode(value)['problems'];
+        log(problems.toString());
       });
 
     super.initState();
@@ -512,7 +519,6 @@ class _ReportDataSource extends DataTableSource {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': '*/*'
         },
-        
       );
 
       var data = jsonDecode(res.body);
@@ -770,7 +776,103 @@ class _ReportDataSource extends DataTableSource {
     );
   }
 
-  downloadLog(int report_id) {
+  downloadLog(int report_id) async {
+    var res = await http.get(
+      Uri.parse(
+        '$url/api/admin/getLogs?report_id=$report_id'),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': '*/*'
+        },
+    );
+
+    var data = jsonDecode(res.body);
+    var success = data['success'];
+    if (success) {
+      exportLogExcel(data);
+    }
+  }
+
+  exportLogExcel(dynamic data) async {
+    String uid = data['uid'].toString();
+    String report_id = data['report_id'].toString();
+    var details = data['details'];
+    
+    List<dynamic> scores = details.where((detail) => detail['question_id'] == 0).toList();
+    List<dynamic> eyetrack = details.where((detail) => detail['question_id'] != 0).toList();
+    List<dynamic> polls = scores.where((detail) => detail['part_id'] > 30).toList();
+
+    // Create Excel file
+    var excel = Excel.createExcel();
+
+    // Write Totel Log
+    {
+      String scoreSheetName = "종합";
+      excel.rename("Sheet1", scoreSheetName);
+      var totalSheet = excel[scoreSheetName];
+      totalSheet.insertRowIterables(["완료시간", "게임종류", "세트", "총점"], 0);
+      int line = 1;
+      for (int i = 0; i < scores.length; i++) { 
+        var log = scores[i];
+        List<String> detail = log['detail'].split('/');
+        detail[2] = (int.parse(detail[2]) % 10).toString();
+        totalSheet.insertRowIterables(detail, line);
+        line++;
+      }
+    }
+
+    // Write Poll Log
+    {
+      
+      String pollSheetName = "부모체크리스트";
+      var pollSheet = excel[pollSheetName];
+      var columns = ["세트수", "문제번호", "문제내용", "정답으로 선택한 번호"];
+
+      pollSheet.insertRowIterables(columns, 0);
+      int line = 1;
+      for (int i = 0; i < polls.length; i++) {
+        var log = polls[i];
+        int part = log['part_id'] % 10;
+        List<String> details = log['detail'].split("/").last.split(',');
+        for (int j = 0; j < details.length; j++) {
+          if (details[j] == " ") {
+            break;
+          }
+          print("i : $i , j : $j, problems : ${problems[i][j]}");
+          pollSheet.insertRowIterables([part.toString(), (j+1).toString(), "", details[j]], line);
+          line++;
+        }
+      }
+    }
+    
+    // Write Eyetrack Log
+    {
+      for (int i = 0; i < eyetrack.length; i++) {
+        var log = eyetrack[i];
+        int partId = log['part_id'] % 10;
+        int questionId = log['question_id'];
+        
+        List<String> detail = log['detail'].split('\n');
+        String sheetName = "시선추적 ${partId}_$questionId";
+        var sheet = excel[sheetName];
+        sheet.insertRowIterables(["시간", "성공여부", "시선범위", "시선도약", "좌표"], 0);
+        for (int j = 0; j < detail.length; j++) {
+          var dataList = detail[j].split(' / ');
+          sheet.insertRowIterables(dataList, j + 1);
+        }
+      }
+    }
+    
+    //var sheet = excel['Sheet1'];
+    // sheet.insertRowIterables(["번호", "UID", "아동나이", "아동성별", "생성 시간", "발달지원구간 점수", "발달지원구간 문구", "자폐위험도 점수", "자폐위험도 문구", "선별구간 점수", "선별구간 문구", "완료 시간"], 0);
+
+    // for (int i = 0; i < selectedReport.length; i++) {
+    //   var report = selectedReport[i];
+    //   var dataList = [report.id.toString(), report.uid, report.age.toString(), report.gender.toString(), report.createdAt, report.mainScore.toString(), report.mainComment['section'], report.eyeScore.toString(), report.eyeComment['section'], report.pollScore.toString(), report.pollComment['section'], report.completedAt];
+    //   sheet.insertRowIterables(dataList, i + 1);
+    // }
+
+    excel.save(fileName : "${uid}_$report_id.xlsx");
 
   }
 
