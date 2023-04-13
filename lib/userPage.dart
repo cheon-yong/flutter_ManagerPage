@@ -838,8 +838,7 @@ class _ReportDataSource extends DataTableSource {
           if (details[j] == " ") {
             break;
           }
-          print("i : $i , j : $j, problems : ${problems[i][j]}");
-          pollSheet.insertRowIterables([part.toString(), (j+1).toString(), "", details[j]], line);
+          pollSheet.insertRowIterables([part.toString(), (j+1).toString(), problems[i][j], details[j]], line);
           line++;
         }
       }
