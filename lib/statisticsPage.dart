@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:developer';
 
+import 'main.dart';
+
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -31,7 +33,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
         Uri.parse("$url/api/admin/getScores?startDate=$startDate&endDate=$endDate"),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         }
       );
 
@@ -60,6 +63,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     var res = await getScores(startDate, endDate);
     var data = jsonDecode(res!.body);
     var success = data['success'];
+    
     if (success) {
       playCount = data['playCount'] ?? 0;
       eyetrackCount = data['eyetrackCount'] ?? 0;

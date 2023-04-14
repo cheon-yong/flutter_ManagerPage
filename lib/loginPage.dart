@@ -26,6 +26,27 @@ class _LoginPageState extends State<LoginPage> {
   String url = "http://ec2-43-200-219-190.ap-northeast-2.compute.amazonaws.com:37235";
   //String url = "http://localhost:37235";
 
+  @override
+  void initState() {
+    super.initState();
+    
+    checkToken();
+  }
+
+  void checkToken() async {
+    var prefs = await _pref;
+
+    var token = prefs.getString("token");
+    if (token == null) {
+      return;
+    }
+    var res = await autoLogin(token);
+    var data = jsonDecode(res.body);
+    if (data['success']) {
+      Navigator.of(context).pop();
+    }
+  }
+
   void validateAndSave() async {
     if (formKey.currentState!.validate() == false) {
       ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("아이디 또는 비밀번호가 올바르지 않습니다"));
@@ -33,15 +54,13 @@ class _LoginPageState extends State<LoginPage> {
     }
     
     formKey.currentState!.save();
-    log("$email, $password");
     var res = await getToken(email, password);
-    log(res.body);
     var data = jsonDecode(res.body);
     var success = data['success'];    
     if (success) {
       final SharedPreferences prefs = await _pref;
       await prefs.setString("token", data['token']);
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const MyHomePage(title: "메인페이지")));
+      Navigator.of(context).pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("아이디 또는 비밀번호가 올바르지 않습니다"));
     }
@@ -70,6 +89,23 @@ class _LoginPageState extends State<LoginPage> {
         'email': email,
         'password': password
       },
+    );
+
+    log(response.toString());
+
+    return response;
+  }
+
+  Future<http.Response> autoLogin(String token) async {
+    http.Response response = await http.post(
+      Uri.parse("$url/api/admin/autoLogin"),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': '*/*',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Authorization' : "Bearer $token"
+      }
     );
 
     return response;
@@ -118,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: const InputDecoration(labelText: 'Password'),
                 validator: (value) {
                   if (value!.isEmpty) {
-                    return "비밀번호를 입력하세요";
+                    return "비밀번호를 입력하세요"; 
                   }
 
                   return null;

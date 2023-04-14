@@ -10,6 +10,7 @@ import 'package:iboamanager/StatisticsPage.dart';
 import 'package:iboamanager/UserPage.dart';
 import 'package:iboamanager/loginPage.dart';
 import 'dart:developer';
+import 'package:http/http.dart' as http;
 import 'adminPage.dart';
 
 
@@ -77,6 +78,145 @@ class MyHomePageState extends State<MyHomePage> {
     final SharedPreferences prefs = await _pref;
 
     token = prefs.getString("token");
+    if (token == null) {
+      logout();
+    }
+  }
+
+  void logout() async {
+    final SharedPreferences prefs = await _pref;
+
+    prefs.clear();
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()));
+  }
+
+  Widget sideMenuWidget() {
+    return 
+    SideMenu(
+      controller: sideMenu,
+      style: SideMenuStyle(
+        // showTooltip: false,
+        displayMode: SideMenuDisplayMode.auto,
+        hoverColor: Colors.blue[100],
+        selectedColor: Colors.lightBlue,
+        selectedTitleTextStyle: const TextStyle(color: Colors.white),
+        selectedIconColor: Colors.white,
+        decoration: const BoxDecoration(
+          //borderRadius: BorderRadius.all(Radius.circular(10)),
+          border: Border(
+            right: BorderSide(
+              color: Colors.black,
+              width: 1.0,
+              style: BorderStyle.solid
+            )
+          )
+        ),
+        //backgroundColor: Colors.blueGrey[700]
+        backgroundColor: Colors.white
+      ),
+      title: Column(
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxHeight: 150,
+              maxWidth: 150,
+            ),
+            child: Image.asset(
+              'assets/images/eyesonicon.png',
+            ),
+          ),
+          const Divider(
+            indent: 8.0,
+            endIndent: 8.0,
+          ),
+        ],
+      ),
+      footer: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: logout, 
+              child: const Text(
+                "로그아웃",
+                style: TextStyle(
+                  fontSize: 30
+                ),
+              )
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            const Text(
+              'EYESON',
+              style: TextStyle(
+                fontSize: 15
+              ),
+            )
+          ],
+        )
+      ),
+      items: [
+        // SideMenuItem(
+        //   priority: 0,
+        //   title: "dashboard",
+        //   onTap: (page, _) {
+        //     sideMenu.changePage(page);
+        //   },
+        //   icon: const Icon(Icons.home),
+        //   badgeContent: const Text(
+        //     '3',
+        //     style: TextStyle(color: Colors.white),
+        //   ),
+        //   tooltipContent: "This is a tooltip for Dashboard item",
+        // ),
+        SideMenuItem(
+          priority: 0,
+          title: '어드민 관리',
+          onTap: (page, _) {
+            sideMenu.changePage(page);
+          },
+          icon: const Icon(Icons.supervisor_account),
+        ),
+        SideMenuItem(
+          priority: 1,
+          title: '유저 관리',
+          onTap: (page, _) {
+            sideMenu.changePage(page);
+          },
+          icon: const Icon(Icons.file_copy_rounded),
+          // trailing: Container(
+          //     decoration: const BoxDecoration(
+          //         color: Colors.amber,
+          //         borderRadius: BorderRadius.all(Radius.circular(6))),
+          //     child: Padding(
+          //       padding: const EdgeInsets.symmetric(
+          //           horizontal: 6.0, vertical: 3),
+          //       child: Text(
+          //         'New',
+          //         style: TextStyle(fontSize: 11, color: Colors.grey[800]),
+          //       ),
+          //     )),
+        ),
+        SideMenuItem(
+          priority: 2,
+          title: '통계 관리',
+          onTap: (page, _) {
+            sideMenu.changePage(page);
+          },
+          icon: const Icon(Icons.auto_graph_outlined),
+        ),
+        SideMenuItem(
+          priority: 3,
+          title: '캡챠 관리',
+          onTap: (page, _) {
+            sideMenu.changePage(page);
+          },
+          icon: const Icon(Icons.password_outlined),
+        ),
+      ],
+    );
   }
   
   @override 
@@ -89,112 +229,7 @@ class MyHomePageState extends State<MyHomePage> {
       body: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          SideMenu(
-            controller: sideMenu,
-            style: SideMenuStyle(
-              // showTooltip: false,
-              displayMode: SideMenuDisplayMode.auto,
-              hoverColor: Colors.blue[100],
-              selectedColor: Colors.lightBlue,
-              selectedTitleTextStyle: const TextStyle(color: Colors.white),
-              selectedIconColor: Colors.white,
-              decoration: const BoxDecoration(
-                //borderRadius: BorderRadius.all(Radius.circular(10)),
-                border: Border(
-                  right: BorderSide(
-                    color: Colors.black,
-                    width: 1.0,
-                    style: BorderStyle.solid
-                  )
-                )
-              ),
-              //backgroundColor: Colors.blueGrey[700]
-              backgroundColor: Colors.white
-            ),
-            title: Column(
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 150,
-                    maxWidth: 150,
-                  ),
-                  child: Image.asset(
-                    'assets/images/eyesonicon.png',
-                  ),
-                ),
-                const Divider(
-                  indent: 8.0,
-                  endIndent: 8.0,
-                ),
-              ],
-            ),
-            footer: const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text(
-                'EYESON',
-                style: TextStyle(fontSize: 15),
-              ),
-            ),
-            items: [
-              // SideMenuItem(
-              //   priority: 0,
-              //   title: "dashboard",
-              //   onTap: (page, _) {
-              //     sideMenu.changePage(page);
-              //   },
-              //   icon: const Icon(Icons.home),
-              //   badgeContent: const Text(
-              //     '3',
-              //     style: TextStyle(color: Colors.white),
-              //   ),
-              //   tooltipContent: "This is a tooltip for Dashboard item",
-              // ),
-              SideMenuItem(
-                priority: 0,
-                title: '어드민 관리',
-                onTap: (page, _) {
-                  sideMenu.changePage(page);
-                },
-                icon: const Icon(Icons.supervisor_account),
-              ),
-              SideMenuItem(
-                priority: 1,
-                title: '유저 관리',
-                onTap: (page, _) {
-                  sideMenu.changePage(page);
-                },
-                icon: const Icon(Icons.file_copy_rounded),
-                // trailing: Container(
-                //     decoration: const BoxDecoration(
-                //         color: Colors.amber,
-                //         borderRadius: BorderRadius.all(Radius.circular(6))),
-                //     child: Padding(
-                //       padding: const EdgeInsets.symmetric(
-                //           horizontal: 6.0, vertical: 3),
-                //       child: Text(
-                //         'New',
-                //         style: TextStyle(fontSize: 11, color: Colors.grey[800]),
-                //       ),
-                //     )),
-              ),
-              SideMenuItem(
-                priority: 2,
-                title: '통계 관리',
-                onTap: (page, _) {
-                  sideMenu.changePage(page);
-                },
-                icon: const Icon(Icons.auto_graph_outlined),
-              ),
-              SideMenuItem(
-                priority: 3,
-                title: '캡챠 관리',
-                onTap: (page, _) {
-                  sideMenu.changePage(page);
-                },
-                icon: const Icon(Icons.password_outlined),
-              ),
-            ],
-          ),
+          sideMenuWidget(),
           Expanded(
             child: PageView(
               physics: const NeverScrollableScrollPhysics(),

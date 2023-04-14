@@ -273,7 +273,7 @@ class UserPageState extends State<UserPage> with RestorationMixin {
               PaginatedDataTable(
                 showCheckboxColumn: true,
                 rowsPerPage: _rowsPerPage.value,
-                //availableRowsPerPage: _availableRowPerPage,
+                availableRowsPerPage: _availableRowPerPage,
                 onRowsPerPageChanged: (value) {
                   setState(() {
                     _rowsPerPage.value = value!;
@@ -517,7 +517,8 @@ class _ReportDataSource extends DataTableSource {
         '$url/api/admin/getReports?uid=$uid'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         },
       );
 
@@ -696,73 +697,81 @@ class _ReportDataSource extends DataTableSource {
               )
             ),
           ),
-          content: Container(
-              alignment: Alignment.center, 
-              height: 800,
-              margin: const EdgeInsets.all(10.0), 
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      element("계정 번호", '${report.account_id}'),
-                      element("레포트 번호", '${report.id}'),
-                      element("로그인 & UID", "${report.type}, ${report.uid}"),
-                      element("아동 나이", '${report.age}'),
-                      element("아동 성별", report.gender),
-                      element("아버지 연령대", '${report.father_age}'),
-                      element("어머니 연령대", '${report.mother_age}')
-                    ],
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: Colors.black
-                        )
-                      )
+          contentPadding: const EdgeInsets.all(25.0),
+          content: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
+                alignment: Alignment.center, 
+                height: 800,
+                margin: const EdgeInsets.all(10.0), 
+                child : Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        element("계정 번호", '${report.account_id}'),
+                        element("레포트 번호", '${report.id}'),
+                        element("로그인 & UID", "${report.type}, ${report.uid}"),
+                        element("아동 나이", '${report.age}'),
+                        element("아동 성별", report.gender),
+                        element("아버지 연령대", '${report.father_age}'),
+                        element("어머니 연령대", '${report.mother_age}')
+                      ],
                     ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      element("리포트 선별 시점", report.createdAt, spacing : 20.0),
-                      element("발달 놀이 - 발달 지원 구간 점수", "${report.mainScore}", spacing : 20.0),
-                      element("발달 놀이 - 지원 내용 점수", "${report.mainScore}", spacing : 20.0),
-                      element("관찰 놀이 - 자폐위험도 점수", '${report.eyeScore}', spacing : 20.0),
-                      element("관찰 놀이 - 필요조치 점수", '${report.eyeScore}', spacing : 20.0),
-                      element("부모체크리스트 - 선별구간 점수", '${report.pollScore}', spacing : 20.0),
-                      element("부모체크리스트 - 자폐위험도 점수", '${report.pollScore}', spacing : 20.0),
-                      element("부모체크리스트 - 필요조치 점수", '${report.pollScore}', spacing : 20.0)
-                    ],
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      element("리포트 선별 시점", report.createdAt, spacing : 20.0),
-                      element("발달 놀이 - 발달 지원 구간 텍스트", report.mainComment['section'], spacing : 20.0),
-                      element("발달 놀이 - 지원 내용 텍스트", report.mainComment['detail'], spacing : 20.0),
-                      element("관찰 놀이 - 자폐위험도 선별 텍스트", report.eyeComment['section'], spacing : 20.0),
-                      element("관찰 놀이 - 필요조치 선별 텍스트", report.eyeComment['detail'], spacing : 20.0),
-                      element("부모체크리스트 - 선별구간 텍스트", report.pollComment['section'], spacing : 20.0),
-                      element("부모체크리스트 - 자폐위험도 텍스트", report.pollComment['risky'], spacing : 20.0),
-                      element("부모체크리스트 - 필요조치 텍스트", report.pollComment['detail'], spacing : 20.0)
-                    ],
-                  ),
-                ],
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Container(
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          right: BorderSide(
+                            color: Colors.black
+                          )
+                        )
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        element("리포트 선별 시점", report.createdAt, spacing : 20.0),
+                        element("발달 놀이 - 발달 지원 구간 점수", "${report.mainScore}", spacing : 20.0),
+                        element("발달 놀이 - 지원 내용 점수", "${report.mainScore}", spacing : 20.0),
+                        element("관찰 놀이 - 자폐위험도 점수", '${report.eyeScore}', spacing : 20.0),
+                        element("관찰 놀이 - 필요조치 점수", '${report.eyeScore}', spacing : 20.0),
+                        element("부모체크리스트 - 선별구간 점수", '${report.pollScore}', spacing : 20.0),
+                        element("부모체크리스트 - 자폐위험도 점수", '${report.pollScore}', spacing : 20.0),
+                        element("부모체크리스트 - 필요조치 점수", '${report.pollScore}', spacing : 20.0)
+                      ],
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        element("리포트 선별 시점", report.createdAt, spacing : 20.0),
+                        element("발달 놀이 - 발달 지원 구간 텍스트", report.mainComment['section'], spacing : 20.0),
+                        element("발달 놀이 - 지원 내용 텍스트", report.mainComment['detail'], spacing : 20.0),
+                        element("관찰 놀이 - 자폐위험도 선별 텍스트", report.eyeComment['section'], spacing : 20.0),
+                        element("관찰 놀이 - 필요조치 선별 텍스트", report.eyeComment['detail'], spacing : 20.0),
+                        element("부모체크리스트 - 선별구간 텍스트", report.pollComment['section'], spacing : 20.0),
+                        element("부모체크리스트 - 자폐위험도 텍스트", report.pollComment['risky'], spacing : 20.0),
+                        element("부모체크리스트 - 필요조치 텍스트", report.pollComment['detail'], spacing : 20.0)
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
+            )
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -782,7 +791,8 @@ class _ReportDataSource extends DataTableSource {
         '$url/api/admin/getLogs?report_id=$report_id'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         },
     );
 
@@ -810,14 +820,40 @@ class _ReportDataSource extends DataTableSource {
       String scoreSheetName = "종합";
       excel.rename("Sheet1", scoreSheetName);
       var totalSheet = excel[scoreSheetName];
-      totalSheet.insertRowIterables(["완료시간", "게임종류", "세트", "총점"], 0);
+      totalSheet.insertRowIterables(["완료시간", "게임종류", "세트", "게임수", "총점", "Right Side", "Wrong Side", "Unknown Side", "Scaled Score"], 0);
       int line = 1;
       for (int i = 0; i < scores.length; i++) { 
         var log = scores[i];
         List<String> detail = log['detail'].split('/');
         detail[2] = (int.parse(detail[2]) % 10).toString();
-        totalSheet.insertRowIterables(detail, line);
-        line++;
+        if (detail[1].contains("MainGame")) {
+          detail.insert(detail.length - 1, "");
+          totalSheet.insertRowIterables(detail, line);
+          line++;
+        }
+        else if (detail[1].contains('Eyetrack')) {
+          List<String> eyescores = detail.last.split(" | ");
+          detail.removeAt(detail.length - 1);
+          for (int j = 0; j < eyescores.length; j++) {
+            if (eyescores[j].isEmpty) {
+              break;
+            }
+
+            var sides = eyescores[j].split(",");
+            var temp = [...detail];
+            temp.insert(temp.length - 2, (j+1).toString());
+            for (int k = 0; k < sides.length; k++) {
+              temp.add(sides[k].split("-").last);
+            }
+            totalSheet.insertRowIterables(temp, line);
+            line++;
+          }
+        } else {
+          detail.insert(detail.length - 2, "");
+          detail.removeAt(detail.length - 1);
+          totalSheet.insertRowIterables(detail, line);
+          line++;
+        }
       }
     }
 

@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_unnecessary_containers, sort_child_properties_last, non_constant_identifier_names
+// ignore_for_file: library_private_types_in_public_api, avoid_unnecessary_containers, sort_child_properties_last, non_constant_identifier_names, use_build_context_synchronously
 
 import 'dart:convert';
 import 'dart:developer';
@@ -95,23 +95,36 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
         child: ListView(
           restorationId: 'data_table_list_view',
           children: [
-            PaginatedDataTable(
-              header: Row(
-                children: [
-                  const Text(
-                    "어드민 관리"
-                  ),
-                  ElevatedButton(
-                    child: const Text("추가하기"),
-                    style: const ButtonStyle(
-                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
-                      alignment: Alignment.center
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [ const Text(
+                    "어드민 관리",
+                    style: TextStyle(
+                      fontSize: 24.0,
+                    //fontWeight: FontWeight.w400
                     ),
-                    onPressed: () =>_adminDataSource?.createDialog(),
+                  ),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        child: const Text("추가하기"),
+                        style: const ButtonStyle(
+                          backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+                          alignment: Alignment.center
+                        ),
+                        onPressed: () =>_adminDataSource?.createDialog(),
+                      ),
+                      const SizedBox(
+                        width: 121,
+                      )
+                    ],
                   )
                 ],
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
               ),
+            ),
+            PaginatedDataTable(
               rowsPerPage: _rowsPerPage.value,
               onRowsPerPageChanged: (value) {
                 setState(() {
@@ -240,7 +253,8 @@ class _AdminDataSource extends DataTableSource {
         '$url/api/admin/getAdmins'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         },
       );
 
@@ -251,9 +265,9 @@ class _AdminDataSource extends DataTableSource {
         _admins.clear();
         for (int i = 0; i < admins.length; i++) {
           final admin = admins[i];
-          log(admin.toString());
+          String createdAt = admin['createdAt'].toString().replaceFirst("T", " ").replaceAll(".000Z", "");
           _admins.add(
-            _Admin(admin['id'], admin['name'], admin['email'], admin['role'], admin['createdAt'])
+            _Admin(admin['id'], admin['name'], admin['email'], admin['role'], createdAt)
           );
         }
       } else {
@@ -284,7 +298,8 @@ class _AdminDataSource extends DataTableSource {
         Uri.parse("$url/api/admin/createAdmin"),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         },
         body: {
           'email': email,
@@ -294,8 +309,7 @@ class _AdminDataSource extends DataTableSource {
         }
       );
 
-      var data = jsonDecode(res.body);
-      return data['success'];
+      return res;
 
     } catch(error) {
       log(error.toString());
@@ -304,20 +318,19 @@ class _AdminDataSource extends DataTableSource {
 
   deleteAdmin(_Admin account) async {
     try {
-      log("id : ${account.id}, role : ${account.role}");
       http.Response res = await http.delete(
         Uri.parse("$url/api/admin/deleteAdmin"),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         },
         body: {
           'id': "${account.id}"
         }
       );
 
-      var data = jsonDecode(res.body);
-      return data['success'];
+      return res;
 
     } catch(error) {
       log(error.toString());
@@ -326,12 +339,12 @@ class _AdminDataSource extends DataTableSource {
 
   modifyAdmin(_Admin account) async {
     try {
-      log("id : ${account.id}, role : ${account.role}");
       http.Response res = await http.put(
         Uri.parse("$url/api/admin/modifyAdmin"),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         },
         body: {
           'id': "${account.id}",
@@ -339,9 +352,7 @@ class _AdminDataSource extends DataTableSource {
         }
       );
 
-      var data = jsonDecode(res.body);
-      return data['success'];
-
+      return res;
     } catch(error) {
       log(error.toString());
     }
@@ -465,14 +476,22 @@ class _AdminDataSource extends DataTableSource {
                   return;
                 }
 
-                log("$email, $password, $name, $role");
-                var result = await createAdmin(email, password, name, role);
+                var res = await createAdmin(email, password, name, role);
+                var data = jsonDecode(res.body);
+                var result = data['success'];
+
                 Navigator.of(context).pop();
                 if (result) {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("추가 성공"));
                   getAdmins();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("추가 실패"));
+                  if (res.statusCode == 403) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("Master가 아닙니다"));
+                  } else if (res.statusCode == 404) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("계정을 찾을 수 없습니다."));
+                  } else if (res.statusCode == 409) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("존재하는 이메일입니다."));
+                  }
                 }
               },
               child: const Text("추가")
@@ -523,26 +542,42 @@ class _AdminDataSource extends DataTableSource {
             ),
             TextButton(
               onPressed: () async {
-                var result = await deleteAdmin(tempAccount);
+                var res = await deleteAdmin(tempAccount);
+                var data = jsonDecode(res.body);
+                var result = data['success'];
                 Navigator.of(context).pop();
                 if (result) {
                   ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 성공"));
                   getAdmins();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제 실패"));
+                  if (res.statusCode == 403) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("Master가 아닙니다"));
+                  } else if (res.statusCode == 404) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("계정을 찾을 수 없습니다."));
+                  } else if (res.statusCode == 409) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제에 실패했습니다."));
+                  }
                 }
               },
               child: const Text("삭제")
             ),
             TextButton(
               onPressed: () async {
-                var result = await modifyAdmin(tempAccount);
+                var res = await modifyAdmin(tempAccount);
+                var data = jsonDecode(res.body);
+                var result = data['success'];
                 Navigator.of(context).pop();
                 if (result) {
-                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 성공"));
+                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("수정 성공"));
                   getAdmins();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("변경 실패"));
+                  if (res.statusCode == 403) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("Master가 아닙니다"));
+                  } else if (res.statusCode == 404) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("계정을 찾을 수 없습니다."));
+                  } else if (res.statusCode == 409) {
+                    ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("수정에 실패했습니다"));
+                  }
                 }
               },
               child: const Text("수정")

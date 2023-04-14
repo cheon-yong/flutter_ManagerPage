@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:developer';
 
+import 'main.dart';
+
 
 class CaptchaPage extends StatefulWidget {
   const CaptchaPage({super.key});
@@ -49,7 +51,8 @@ class _CaptchaPageState extends State<CaptchaPage> {
         Uri.parse("$url/api/admin/setCode"),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         },
         body: {
           "code" : code
@@ -69,7 +72,8 @@ class _CaptchaPageState extends State<CaptchaPage> {
         Uri.parse("$url/api/admin/getCode"),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': '*/*'
+          'Accept': '*/*',
+          'Authorization' : "Bearer ${MyHomePageState.token}"
         }
       );
 
