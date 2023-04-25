@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:url_launcher_web/url_launcher_web.dart';
 import 'package:path_provider/path_provider.dart';
+import 'loginPage.dart';
 import 'main.dart';
 import 'package:excel/excel.dart';
 import 'package:intl/intl.dart'; 
@@ -524,6 +525,8 @@ class _ReportDataSource extends DataTableSource {
 
       var data = jsonDecode(res.body);
       var success = data['success'];
+
+
       if (success) {
         var account = data['account'];
         if (account != null) {
@@ -588,7 +591,13 @@ class _ReportDataSource extends DataTableSource {
         }
         
       } else {
-        _reports = [];
+        await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+        .then((value) {
+          MyHomePageState.refreshToken();
+          getReports(uid);
+        });
+
+        return false;
       }
 
       notifyListeners();
@@ -800,6 +809,11 @@ class _ReportDataSource extends DataTableSource {
     var success = data['success'];
     if (success) {
       exportLogExcel(data);
+    } else {
+      await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+      .then((value) {
+        MyHomePageState.refreshToken();
+      });
     }
   }
 
@@ -820,7 +834,7 @@ class _ReportDataSource extends DataTableSource {
       String scoreSheetName = "종합";
       excel.rename("Sheet1", scoreSheetName);
       var totalSheet = excel[scoreSheetName];
-      totalSheet.insertRowIterables(["완료시간", "게임종류", "세트", "게임수", "총점", "Right Side", "Wrong Side", "Unknown Side", "Scaled Score"], 0);
+      totalSheet.insertRowIterables(["완료시간", "게임종류", "세트명", "게임명", "총점", "Right Side", "Wrong Side", "Unknown Side", "Scaled Score"], 0);
       int line = 1;
       for (int i = 0; i < scores.length; i++) { 
         var log = scores[i];
@@ -841,7 +855,7 @@ class _ReportDataSource extends DataTableSource {
 
             var sides = eyescores[j].split(",");
             var temp = [...detail];
-            temp.insert(temp.length - 2, (j+1).toString());
+            temp.insert(temp.length - 1, (j+1).toString());
             for (int k = 0; k < sides.length; k++) {
               temp.add(sides[k].split("-").last);
             }
@@ -898,14 +912,6 @@ class _ReportDataSource extends DataTableSource {
       }
     }
     
-    //var sheet = excel['Sheet1'];
-    // sheet.insertRowIterables(["번호", "UID", "아동나이", "아동성별", "생성 시간", "발달지원구간 점수", "발달지원구간 문구", "자폐위험도 점수", "자폐위험도 문구", "선별구간 점수", "선별구간 문구", "완료 시간"], 0);
-
-    // for (int i = 0; i < selectedReport.length; i++) {
-    //   var report = selectedReport[i];
-    //   var dataList = [report.id.toString(), report.uid, report.age.toString(), report.gender.toString(), report.createdAt, report.mainScore.toString(), report.mainComment['section'], report.eyeScore.toString(), report.eyeComment['section'], report.pollScore.toString(), report.pollComment['section'], report.completedAt];
-    //   sheet.insertRowIterables(dataList, i + 1);
-    // }
 
     excel.save(fileName : "${uid}_$report_id.xlsx");
 

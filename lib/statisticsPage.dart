@@ -69,6 +69,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
       eyetrackCount = data['eyetrackCount'] ?? 0;
       pollCount = data['pollCount'] ?? 0;
       setState(() {});
+    } else {
+      await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+      .then((value) {
+        MyHomePageState.refreshToken();
+        setState(() {});
+      });
     }
   }
 

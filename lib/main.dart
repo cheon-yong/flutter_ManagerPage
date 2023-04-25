@@ -61,12 +61,13 @@ class MyHomePage extends StatefulWidget {
 class MyHomePageState extends State<MyHomePage> {
   PageController page = PageController();
   SideMenuController sideMenu = SideMenuController();
-
   final _pref = SharedPreferences.getInstance();
+  static SharedPreferences? prefs;
   static String? token = "";
 
   @override
   void initState() {
+    _pref.then((value) => prefs = value);
     sideMenu.addListener((p0) {
       page.jumpToPage(p0);
     });
@@ -83,11 +84,19 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  static void refreshToken() async {
+    log("무야호오오오오오오오옹오오오오ㅗ오오ㅗ오ㅗㅗㅗㅗ오오오오오오옹");
+    token = prefs?.getString("token");
+  }
+
   void logout() async {
     final SharedPreferences prefs = await _pref;
 
     prefs.clear();
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()));
+    bool success = await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()));
+    if (success) {
+      getToken();
+    }
   }
 
   Widget sideMenuWidget() {

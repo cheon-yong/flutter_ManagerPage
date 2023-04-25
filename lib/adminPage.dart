@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:iboamanager/main.dart';
 
+import 'loginPage.dart';
+
 //const url = "http://localhost:37235";
 String url = "http://ec2-43-200-219-190.ap-northeast-2.compute.amazonaws.com:37235";
 
@@ -271,7 +273,11 @@ class _AdminDataSource extends DataTableSource {
           );
         }
       } else {
-        _admins = [];
+        await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+          .then((value) {
+          MyHomePageState.refreshToken();
+          getAdmins();
+        });
       }
 
       notifyListeners();
@@ -491,6 +497,11 @@ class _AdminDataSource extends DataTableSource {
                     ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("계정을 찾을 수 없습니다."));
                   } else if (res.statusCode == 409) {
                     ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("존재하는 이메일입니다."));
+                  } else if (res.statusCode == 401) {
+                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+                    .then((value) {
+                      MyHomePageState.refreshToken();
+                    });
                   }
                 }
               },
@@ -556,6 +567,11 @@ class _AdminDataSource extends DataTableSource {
                     ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("계정을 찾을 수 없습니다."));
                   } else if (res.statusCode == 409) {
                     ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("삭제에 실패했습니다."));
+                  } else if (res.statusCode == 401) {
+                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+                    .then((value) {
+                      MyHomePageState.refreshToken();
+                    });
                   }
                 }
               },
@@ -577,6 +593,11 @@ class _AdminDataSource extends DataTableSource {
                     ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("계정을 찾을 수 없습니다."));
                   } else if (res.statusCode == 409) {
                     ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("수정에 실패했습니다"));
+                  } else if (res.statusCode == 401) {
+                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+                    .then((value) {
+                      MyHomePageState.refreshToken();
+                    });
                   }
                 }
               },

@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
 
 import 'package:adaptive_scrollbar/adaptive_scrollbar.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:developer';
 
+import 'loginPage.dart';
 import 'main.dart';
 
 
@@ -25,7 +26,7 @@ class _CaptchaPageState extends State<CaptchaPage> {
 
   String code = "";
   String newCode = "";
-  
+
   Future<bool> validate() async {
     if (formKey.currentState!.validate() == false) {
       return false;
@@ -37,6 +38,11 @@ class _CaptchaPageState extends State<CaptchaPage> {
     var data = jsonDecode(res!.body);
     var success = data['success'];
     if (success == false) {
+      await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+      .then((value) {
+        MyHomePageState.refreshToken();
+        setState(() {});
+      });
       return false;
     }
 
@@ -78,7 +84,19 @@ class _CaptchaPageState extends State<CaptchaPage> {
       );
 
       var data = jsonDecode(res.body);
-      log(data['code']);
+      if (!data['success']) {
+        await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
+        .then((value) {
+          MyHomePageState.refreshToken();
+          getCode()
+          .then((value) {
+            code = value;
+            setState(() {});
+          });
+        });
+        return "";
+      }
+
       return data['code'];
     } catch(error) {
       log(error.toString());

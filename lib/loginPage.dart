@@ -43,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
     var res = await autoLogin(token);
     var data = jsonDecode(res.body);
     if (data['success']) {
-      Navigator.of(context).pop();
+      Navigator.pop(context);
     }
   }
 
@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
     if (success) {
       final SharedPreferences prefs = await _pref;
       await prefs.setString("token", data['token']);
-      Navigator.of(context).pop();
+      Navigator.pop(context, success);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(makeSnackBar("아이디 또는 비밀번호가 올바르지 않습니다"));
     }
