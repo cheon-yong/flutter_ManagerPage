@@ -255,6 +255,9 @@ class UserPageState extends State<UserPage> with RestorationMixin {
                     ),
                     const SizedBox(width: 200),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black, // Background color
+                      ),
                       child: const Text(
                         "확인"
                       ),
@@ -262,6 +265,9 @@ class UserPageState extends State<UserPage> with RestorationMixin {
                     ),
                     const SizedBox(width: 20),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black, // Background color
+                      ),
                       child: const Text(
                         "선택 다운"
                       ),
@@ -687,6 +693,135 @@ class _ReportDataSource extends DataTableSource {
       ]  
     );
   }
+
+  Table createLeftTable(List<List<String>> datas, double headerWidth, double contentWidth) {
+    List<TableRow> rows = [];
+    for (int i = 0; i < datas.length; i++) {
+      rows.add(
+        TableRow(
+          children: [
+            Container(
+              padding: EdgeInsets.all(5.0),
+              color: Colors.black,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                datas[i][0],
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15.0,
+                  color: Colors.white
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(5.0),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                datas[i][1],
+                textAlign: TextAlign.center,
+              ),
+            )
+          ],
+        )
+      );
+    }
+    return Table(
+            columnWidths: <int, TableColumnWidth>{
+              0 : FixedColumnWidth(headerWidth),
+              1 : FixedColumnWidth(contentWidth)
+            },
+            border: TableBorder.all(color: Colors.black),
+            children: rows,
+          );
+  }
+  Table createRightTable(List<List<String>> datas, List<double> widths) {
+    List<TableRow> rows = [];
+    for (int i = 0; i < datas.length; i++) {
+      rows.add(
+        TableRow(
+          children: [
+            TableCell(
+              verticalAlignment: TableCellVerticalAlignment.fill,
+              child: Container(
+                padding: EdgeInsets.all(5.0),
+                alignment: Alignment.topLeft,
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.white,
+                      width: 1
+                    )
+                  )
+                ),
+                child: Text(
+                  datas[i][0],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15.0,
+                    color: Colors.white
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            ),
+            Container(
+              padding: EdgeInsets.all(5.0),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                datas[i][1],
+                textAlign: TextAlign.center,
+              ),
+            ),
+            TableCell(
+              verticalAlignment: TableCellVerticalAlignment.fill,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.white,
+                      width: 1
+                    )
+                  )
+                ),
+                padding: EdgeInsets.all(5.0),
+                alignment: Alignment.topLeft,
+                child: Text(
+                  datas[i][2],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15.0,
+                    color: Colors.white
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(5.0),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                datas[i][3],
+                textAlign: TextAlign.left,
+              ),
+            )
+          ],
+        )
+      );
+    }
+    return Table(
+            columnWidths: <int, TableColumnWidth>{
+              0 : FixedColumnWidth(widths[0]),
+              1 : FixedColumnWidth(widths[1]),
+              2 : FixedColumnWidth(widths[2]),
+              3 : FixedColumnWidth(widths[3])
+            },
+            border: TableBorder.all(color: Colors.black),
+            children: rows,
+          );
+  }
   
   detailDialog(_Report report, _Account account) {
     showDialog(
@@ -723,13 +858,16 @@ class _ReportDataSource extends DataTableSource {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        element("계정 번호", '${report.account_id}'),
-                        element("레포트 번호", '${report.id}'),
-                        element("로그인 & UID", "${report.type}, ${report.uid}"),
-                        element("아동 나이", '${report.age}'),
-                        element("아동 성별", report.gender),
-                        element("아버지 연령대", '${report.father_age}'),
-                        element("어머니 연령대", '${report.mother_age}')
+                        createLeftTable(
+                          [
+                            ["계정번호", '${report.account_id}'],
+                            ["레포트 번호", '${report.id}'],
+                            ["로그인 & UID", "${report.type}, ${report.uid}"],
+                            ["아동 나이", '${report.age}'],
+                            ["아동 성별", report.gender],
+                            ["아버지 연령대", '${report.father_age}'],
+                            ["어머니 연령대", '${report.mother_age}']
+                          ], 100, 250),
                       ],
                     ),
                     const SizedBox(
@@ -750,30 +888,16 @@ class _ReportDataSource extends DataTableSource {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        element("리포트 선별 시점", report.createdAt, spacing : 20.0),
-                        element("발달 놀이 - 발달 지원 구간 점수", "${report.mainScore}", spacing : 20.0),
-                        element("발달 놀이 - 지원 내용 점수", "${report.mainScore}", spacing : 20.0),
-                        element("관찰 놀이 - 자폐위험도 점수", '${report.eyeScore}', spacing : 20.0),
-                        element("관찰 놀이 - 필요조치 점수", '${report.eyeScore}', spacing : 20.0),
-                        element("부모체크리스트 - 선별구간 점수", '${report.pollScore}', spacing : 20.0),
-                        element("부모체크리스트 - 자폐위험도 점수", '${report.pollScore}', spacing : 20.0),
-                        element("부모체크리스트 - 필요조치 점수", '${report.pollScore}', spacing : 20.0)
-                      ],
-                    ),
-                    const SizedBox(
-                      width: 10,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        element("리포트 선별 시점", report.createdAt, spacing : 20.0),
-                        element("발달 놀이 - 발달 지원 구간 텍스트", report.mainComment['section'], spacing : 20.0),
-                        element("발달 놀이 - 지원 내용 텍스트", report.mainComment['detail'], spacing : 20.0),
-                        element("관찰 놀이 - 자폐위험도 선별 텍스트", report.eyeComment['section'], spacing : 20.0),
-                        element("관찰 놀이 - 필요조치 선별 텍스트", report.eyeComment['detail'], spacing : 20.0),
-                        element("부모체크리스트 - 선별구간 텍스트", report.pollComment['section'], spacing : 20.0),
-                        element("부모체크리스트 - 자폐위험도 텍스트", report.pollComment['risky'], spacing : 20.0),
-                        element("부모체크리스트 - 필요조치 텍스트", report.pollComment['detail'], spacing : 20.0)
+                        createRightTable([
+                          ["리포트 선별 시점", report.createdAt, "리포트 완료 시점", report.completedAt],
+                          ["발달 놀이 - 발달 지원 구간 점수", "${report.mainScore}", "발달 놀이 - 발달 지원 구간 텍스트", report.mainComment['section']],
+                          ["발달 놀이 - 지원 내용 점수", "${report.mainScore}", "발달 놀이 - 지원 내용 텍스트", report.mainComment['detail']],
+                          ["관찰 놀이 - 자폐위험도 점수", '${report.eyeScore}', "관찰 놀이 - 자폐위험도 선별 텍스트", report.eyeComment['section']],
+                          ["관찰 놀이 - 필요조치 점수", '${report.eyeScore}', "관찰 놀이 - 필요조치 선별 텍스트", report.eyeComment['detail']],
+                          ["부모체크리스트 - 선별구간 점수", '${report.pollScore}', "부모체크리스트 - 선별구간 텍스트", report.pollComment['section']],
+                          ["부모체크리스트 - 자폐위험도 점수", '${report.pollScore}', "부모체크리스트 - 자폐위험도 텍스트", report.pollComment['risky']],
+                          ["부모체크리스트 - 필요조치 점수", '${report.pollScore}', "부모체크리스트 - 필요조치 텍스트", report.pollComment['detail']]
+                        ], [250, 200, 250, 800]),
                       ],
                     ),
                   ],

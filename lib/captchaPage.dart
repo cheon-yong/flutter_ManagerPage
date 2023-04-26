@@ -174,6 +174,9 @@ class _CaptchaPageState extends State<CaptchaPage> {
                     ),
                     const SizedBox(width: 200),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black, // Background color
+                      ),
                       child: const Text(
                         "변경"
                       ),

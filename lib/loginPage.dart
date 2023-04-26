@@ -165,6 +165,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
               ElevatedButton(
                 onPressed: validateAndSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black, // Background color
+                ),
                 child: const Text(
                   'Login',
                   style: TextStyle(fontSize: 20.0),

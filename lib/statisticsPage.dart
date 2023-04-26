@@ -28,6 +28,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
   int eyetrackCount = 0;
   int pollCount = 0;
 
+  String startDate = "";
+  String endDate = "";
+
+  final String firstDay = "2000-01-01 00:00:00";
+
   Future<http.Response?> getScores(String startDate, String endDate) async {
     try {
       http.Response res = await http.get(
@@ -46,6 +51,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
     }
   }
 
+  String getDates() {
+    String start = startDate.split(' ')[0];
+    String end = endDate.split(' ')[0];
+    return "기준일 : $start ~ $end";
+  }
+
   @override
   initState() {
     super.initState();
@@ -55,8 +66,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
   setCounts(String start, String end) async {
     start = start.substring(0, start.indexOf(" "));
     end = end.substring(0, end.indexOf(" "));
-    log("start : $start");
-    log("end : $end");
 
     String startDate = "$start 00:00:00";
     String endDate = "$end 23:59:59";
@@ -69,6 +78,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
       playCount = data['playCount'] ?? 0;
       eyetrackCount = data['eyetrackCount'] ?? 0;
       pollCount = data['pollCount'] ?? 0;
+      this.startDate = startDate;
+      this.endDate = endDate;
       setState(() {});
     } else {
       await Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()))
@@ -190,6 +201,50 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
+  createTable(String header, String content) {
+    return 
+      Table(
+        defaultColumnWidth: const FixedColumnWidth(230.0),
+        border: TableBorder.all(color: Colors.white),
+        children: [
+          TableRow(
+            children: [
+              Container(
+                height: 50,
+                color: Colors.black,
+                alignment: Alignment.center,
+                child: Text(
+                  header,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24
+                  ),
+                ),
+              )
+            ],
+          ),
+          TableRow(
+            children: [
+              Container(
+                height: 50,
+                color: Colors.black,
+                alignment: Alignment.center,
+                child: Text(
+                  content,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24
+                  ),
+                ),
+              )
+            ]
+          )
+        ],
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,6 +274,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     width: 41,
                   ),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black, // Background color
+                    ),
                     child: const Text(
                       "오늘"
                     ),
@@ -228,16 +286,22 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   ),
                   const SizedBox(width: 21),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black, // Background color
+                    ),
                     child: const Text(
                       "전체"
                     ),
                     onPressed: () => {
-                      setCounts("2000-01-01 00:00:00", DateTime.now().toString())
+                      setCounts(firstDay, DateTime.now().toString())
                     }, 
                   ),
                   const SizedBox(width: 21),
                   ElevatedButton(
-                    child: Text(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black, // Background color
+                    ),
+                    child: const Text(
                       "날짜 선택"
                     ),
                     onPressed: showCalander, 
@@ -248,49 +312,36 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 height: 50
               ),
               Row(
+                children: [
+                  const SizedBox(
+                    width: 41,
+                  ),
+                  Text(
+                    getDates(),
+                    style: TextStyle(
+                      fontSize: 32
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(
+                height: 50
+              ),
+              Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
                   const SizedBox(
                     width: 41,
                   ),
-                  Table(
-                    defaultColumnWidth: const FixedColumnWidth(150.0),
-                    border: TableBorder.all(),
-                    children: [
-                      const TableRow(
-                        children: [
-                          Text(
-                            "발달놀이 수",
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            "관찰놀이 수",
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            "부모체크리스트 수",
-                            textAlign: TextAlign.center,
-                          )
-                        ]
-                      ),
-                      TableRow(
-                        children: [
-                          Text(
-                            playCount.toString(),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            eyetrackCount.toString(),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            pollCount.toString(),
-                            textAlign: TextAlign.center,
-                          )
-                        ]
-                      )
-                    ],
+                  createTable("발달놀이 수", playCount.toString()),
+                  const SizedBox(
+                    width: 21,
                   ),
+                  createTable("관찰놀이 수", eyetrackCount.toString()),
+                  const SizedBox(
+                    width: 21,
+                  ),
+                  createTable("부모체크리스트 수", pollCount.toString()),
                 ]
               ),
             ]

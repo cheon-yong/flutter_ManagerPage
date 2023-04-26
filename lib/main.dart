@@ -43,7 +43,10 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blueGrey,
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: const MyHomePage(title: 'Iboa Manager'),
+      home: const MyHomePage(
+        title: 'Iboa Manager',
+        
+      ),
       //home : const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
@@ -80,12 +83,11 @@ class MyHomePageState extends State<MyHomePage> {
 
     token = prefs.getString("token");
     if (token == null) {
-      logout();
+      //logout();
     }
   }
 
   static void refreshToken() async {
-    log("무야호오오오오오오오옹오오오오ㅗ오오ㅗ오ㅗㅗㅗㅗ오오오오오오옹");
     token = prefs?.getString("token");
   }
 
@@ -234,6 +236,7 @@ class MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
         centerTitle: true,
+        backgroundColor: Colors.black,
       ),
       body: Row(
         mainAxisAlignment: MainAxisAlignment.start,

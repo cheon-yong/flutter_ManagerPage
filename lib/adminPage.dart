@@ -112,7 +112,7 @@ class _AdminPageState extends State<AdminPage> with RestorationMixin {
                       ElevatedButton(
                         child: const Text("추가하기"),
                         style: const ButtonStyle(
-                          backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+                          backgroundColor: MaterialStatePropertyAll<Color>(Colors.black),
                           alignment: Alignment.center
                         ),
                         onPressed: () =>_adminDataSource?.createDialog(),
@@ -664,7 +664,7 @@ class _AdminDataSource extends DataTableSource {
             child: ElevatedButton(
               child: const Text("수정"),
               style: const ButtonStyle(
-                backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue),
+                backgroundColor: MaterialStatePropertyAll<Color>(Colors.black),
                 alignment: Alignment.center
               ),
               onPressed: () => modifyDialog(admin),
